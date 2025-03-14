@@ -295,33 +295,25 @@ export class Game extends Scene
             this.puzzleGroup.destroy(true);
         }
         // Cria um container para agrupar os elementos do puzzle; posicione-o conforme desejado
-        this.puzzleGroup = this.add.container(this.boxPuzzle.x - this.boxPuzzle.displayWidth / 2, this.boxPuzzle.y - this.boxPuzzle.displayHeight / 2);
+        this.puzzleGroup = this.add.container(this.boxPuzzle.x - 50, this.boxPuzzle.y - 60);
         
-        const tileWidth = 100, tileHeight = 100, gap = 5;
+        const dotRadius = 20, gap = 5;
         for (let i = 0; i < 6; i++) {
             const col = i % 2;
             const row = Math.floor(i / 2);
-            const posX = col * (tileWidth + gap);
-            const posY = row * (tileHeight + gap);
+            const posX = col * (dotRadius * 2 + gap);
+            const posY = row * (dotRadius * 2 + gap);
             // Cor do tile: se for o tile vazio (id === 0) usa cor clara
-            const tileColor = (this.puzzleBoard[i].id === 0) ? 0x3498db : 0xC2A385;
-            const tile = this.add.rectangle(posX, posY, tileWidth, tileHeight, tileColor)
-                .setOrigin(0, 0);
-            // Se o tile não for vazio e tiver o "dot", adicione o texto
-            if (this.puzzleBoard[i].id !== 0 && this.puzzleBoard[i].hasDot) {
-                const dot = this.add.text(posX + tileWidth / 2, posY + tileHeight / 2, "●", {
-                    fontFamily: 'Love Light',
-                    fontSize: '24px',
-                    color: '#ffffff'
-                }).setOrigin(0.5);
-                this.puzzleGroup.add(dot);
-            }
+            const dotColor = (this.puzzleBoard[i].id === 0) ? 0x4A8EA5 : 0xC2A385;
+            const dot = this.add.circle(posX + dotRadius, posY + dotRadius, dotRadius, dotColor)
+            .setOrigin(0.5);
+            
             // Torna o tile interativo para que o jogador possa movê-lo
-            tile.setInteractive();
-            tile.on('pointerdown', () => {
+            dot.setInteractive();
+            dot.on('pointerdown', () => {
                 this.movePuzzleTile(i);
             });
-            this.puzzleGroup.add(tile);
+            this.puzzleGroup.add(dot);
         }
     }
 
