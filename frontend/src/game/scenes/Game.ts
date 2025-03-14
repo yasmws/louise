@@ -37,6 +37,9 @@ export class Game extends Scene
     // Progresso dos jogadores
     private player1ProgressValue: number = 0; // Progresso inicial do Jogador 1
     private player2ProgressValue: number = 0; // Progresso inicial do Jogador 2
+    boxClueText: Phaser.GameObjects.Image;
+    boxBraille: Phaser.GameObjects.Image;
+    textBraille: Phaser.GameObjects.Text;
 
     constructor ()
     {
@@ -53,7 +56,8 @@ export class Game extends Scene
         this.load.image('Behind', 'assets/Behind 1.png');
         this.load.image('Menu3CategF', 'assets/Menu3CategoriesFront.png');
         this.load.image('Menu3CategB', 'assets/Menu3CategoriesBehind.png');
-        
+        this.load.image('Menu2', 'assets/Menu2.png');
+        this.load.image('Menu1', 'assets/Menu1.png');
         // Fonts
         this.load.font('Jacques Francois', 'assets/fonts/JacquesFrancois-Regular.ttf');
         this.load.font('Love Light', 'assets/fonts/LoveLight-Regular.ttf');
@@ -136,34 +140,65 @@ export class Game extends Scene
             .setDisplaySize(300, 50)
             .setOrigin(0.5, 0.5);
         this.player2Progress = this.add.graphics();
-        this.updateProgressBar(this.player2Progress, 874, 10, this.player2ProgressValue);
+        this.updateProgressBar(this.player2Progress, 674, 10, this.player2ProgressValue);
 
         // --- Enigma ---
-        this.leftClueText = this.add.text(200, 300, 'Siga onde as folhas\ncontam histórias\ne os sussurros\nsão de papel.', {
-            fontFamily: 'Arial',
-            fontSize: '24px',
+        const clues = [
+            'Siga onde as folhas\ncontam histórias\ne os sussurros\nsão de papel.',
+            'Procure onde o sol\nbeija a terra\ne as sombras\ndançam.',
+            'Va onde as estrelas\nbrilham mais forte\ne os sonhos\nganham vida.'
+        ];
+
+        const randomClue = clues[Math.floor(Math.random() * clues.length)];
+
+        this.boxClueText = this.add.image(200, 330, 'Menu1')
+            .setDisplaySize(303.8, 308.7) // 434 441
+            .setOrigin(0.5, 0.5);
+
+        this.leftClueText = this.add.text(200, 330, randomClue, {
+            fontFamily: 'Love Light',
+            fontSize: '36px',
             color: '#000000',
-            backgroundColor: '#f5deb3',
             padding: { x: 10, y: 10 },
             align: 'center'
         }).setOrigin(0.5);
 
-        this.dotsPuzzle = this.add.image(512, 300, 'dotsPuzzle').setOrigin(0.5);
+        this.dotsPuzzle = this.add.image(512, 375, 'Menu2')
+            .setDisplaySize(209.3, 247.8) // 434 441
+            .setOrigin(0.5);
 
         // --- Enigma ASCII ---
-        const asciiPuzzle = `    _______
-           /       \\
-          |   ??   |
-           \\_______/
-            (-----)
-             \\___/`;
-        this.asciiPuzzleText = this.add.text(824, 300, asciiPuzzle, {
-            fontFamily: 'Courier',
+        const asciiPuzzle = this.translateToBraille(randomClue);
+
+        this.boxBraille = this.add.image(844, 330, 'Menu1')
+            .setDisplaySize(303.8, 308.7) // 434 441
+            .setOrigin(0.5, 0.5);
+
+        const brailleChars = asciiPuzzle.split('');
+        const charWidth = 20;
+        const charHeight = 30;
+        const startX = 824 - (charWidth * 8) / 2;
+        const startY = 300 - charHeight / 2;
+
+        brailleChars.forEach((char, index) => {
+            const x = startX + (index % 8) * charWidth;
+            const y = startY + Math.floor(index / 8) * charHeight;
+
+            // Draw rectangle
+            this.add.graphics()
+            .fillRect(x, y, charWidth, charHeight)
+            .lineStyle(1, 0x000000, 1)
+            .strokeRect(x, y, charWidth, charHeight);
+
+            // Add text
+            this.add.text(x + charWidth / 2, y + charHeight / 2, char, {
+            fontFamily: 'Love Light',
             fontSize: '16px',
             color: '#000000',
-            backgroundColor: '#f5deb3',
-            padding: { x: 10, y: 10 }
-        }).setOrigin(0.5);
+            }).setOrigin(0.5);
+        });
+
+
 
         // --- Botão "Finalizar Fase" ---
         this.finishPhaseBtn = this.add.text(512, 550, 'Finalizar Fase', {
@@ -188,6 +223,18 @@ export class Game extends Scene
         EventBus.emit('current-scene-ready', this);
     }
 
+    private translateToBraille(text: string): string
+    {
+        const brailleMap = {
+            'a': '⠁', 'b': '⠃', 'c': '⠉', 'd': '⠙', 'e': '⠑', 'f': '⠋', 'g': '⠛', 'h': '⠓',
+            'i': '⠊', 'j': '⠚', 'k': '⠅', 'l': '⠇', 'm': '⠍', 'n': '⠝', 'o': '⠕', 'p': '⠏',
+            'q': '⠟', 'r': '⠗', 's': '⠎', 't': '⠞', 'u': '⠥', 'v': '⠧', 'w': '⠺', 'x': '⠭',
+            'y': '⠽', 'z': '⠵', ' ': '⠀', '\n': '\n'
+        };
+
+        return text.split('').map((char: string) => brailleMap[char.toLowerCase() as keyof typeof brailleMap] || char).join('');
+    }
+
     private startTimer(): void
     {
         this.timeLeft = 60;
@@ -198,6 +245,7 @@ export class Game extends Scene
                 if (this.timeLeft < 0) {
                     this.timeLeft = 0;
                     this.timerEvent.remove(false);
+                    this.finishPhase();
                 }
                 this.updateTimerText();
             },
