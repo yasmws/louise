@@ -75,6 +75,7 @@ export class Game extends Scene
     boxClueText: Phaser.GameObjects.Image;
     boxPuzzle: Phaser.GameObjects.Image;
     boxBraille: Phaser.GameObjects.Image;
+    bgMusic: Phaser.Sound.NoAudioSound | Phaser.Sound.HTML5AudioSound | Phaser.Sound.WebAudioSound;
 
     constructor ()
     {
@@ -108,8 +109,8 @@ export class Game extends Scene
         this.background = this.add.image(512, 384, 'background');
         
         // --- Música de fundo ---
-        const bgMusic = this.sound.add('backgroundMusic', { loop: true, volume: 0.1 });
-        bgMusic.play();
+        this.bgMusic = this.sound.add('backgroundMusic', { loop: true, volume: 0.1 });
+        this.bgMusic.play();
 
 
         // --- Cabeçalho com pontinhos em degradê ---
@@ -424,8 +425,15 @@ export class Game extends Scene
         this.updateProgressBarReverse(this.player2Progress, 774, 60, this.player2ProgressValue);
     }
 
+    private gameOver(): void
+    {
+        this.timerEvent.remove(false);
+        this.bgMusic.stop();
+        this.scene.start('GameOver');
+    }
+
     private finishPhase(): void
     {
-        this.scene.start('GameOver');
+        this.gameOver();
     }
 }
