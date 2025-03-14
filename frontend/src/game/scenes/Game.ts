@@ -83,6 +83,9 @@ export class Game extends Scene
 
     preload ()
     {
+        // Música
+        this.load.audio('backgroundMusic', 'assets/audio/background.m4a');
+
         // Carregue seus assets
         this.load.image('background', 'assets/background.png');
         this.load.image('dotsPuzzle', 'assets/dotsPuzzle.png');
@@ -93,6 +96,7 @@ export class Game extends Scene
         this.load.image('Menu3CategB', 'assets/Menu3CategoriesBehind.png');
         this.load.image('Menu2', 'assets/Menu2.png');
         this.load.image('Menu1', 'assets/Menu1.png');
+        
         // Fonts
         this.load.font('Jacques Francois', 'assets/fonts/JacquesFrancois-Regular.ttf');
         this.load.font('Love Light', 'assets/fonts/LoveLight-Regular.ttf');
@@ -102,6 +106,11 @@ export class Game extends Scene
     {
         // --- Fundo da biblioteca ---
         this.background = this.add.image(512, 384, 'background');
+        
+        // --- Música de fundo ---
+        const bgMusic = this.sound.add('backgroundMusic', { loop: true, volume: 0.1 });
+        bgMusic.play();
+
 
         // --- Cabeçalho com pontinhos em degradê ---
         this.header = this.add.graphics();
@@ -257,9 +266,18 @@ export class Game extends Scene
         EventBus.emit('current-scene-ready', this);
     }
     private translateToBraille(randomClue: string): string {
-        // Implement the translation logic here
-        // For now, let's return a dummy string for demonstration purposes
-        return "⠠⠎⠊⠛⠁ ⠕⠝⠙⠑ ⠁⠎ ⠋⠕⠇⠊⠁⠎";
+        const brailleMap: { [key: string]: string } = {
+            'a': '⠁', 'b': '⠃', 'c': '⠉', 'd': '⠙', 'e': '⠑', 'f': '⠋', 'g': '⠛', 'h': '⠓', 'i': '⠊', 'j': '⠚',
+            'k': '⠅', 'l': '⠇', 'm': '⠍', 'n': '⠝', 'o': '⠕', 'p': '⠏', 'q': '⠟', 'r': '⠗', 's': '⠎', 't': '⠞',
+            'u': '⠥', 'v': '⠧', 'w': '⠺', 'x': '⠭', 'y': '⠽', 'z': '⠵',
+            ' ': ' ', '\n': '\n'
+        };
+
+        return randomClue
+            .toLowerCase()
+            .split('')
+            .map(char => brailleMap[char] || char)
+            .join('');
     }
 
     // ---------------- Puzzle (Sliding Puzzle) Lógica ---------------- //
