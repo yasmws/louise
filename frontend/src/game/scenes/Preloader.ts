@@ -1,47 +1,54 @@
 import { Scene } from 'phaser';
 
-export class Preloader extends Scene
-{
-    constructor ()
-    {
+export class Preloader extends Scene {
+    constructor() {
         super('Preloader');
     }
 
-    init ()
-    {
-        //  We loaded this image in our Boot Scene, so we can display it here
-        this.add.image(512, 384, 'background');
+    init() {
+        // Criamos um fundo simples enquanto carrega
+        this.cameras.main.setBackgroundColor('#000000');
 
-        //  A simple progress bar. This is the outline of the bar.
+        // Barra de carregamento - contorno
         this.add.rectangle(512, 384, 468, 32).setStrokeStyle(1, 0xffffff);
 
-        //  This is the progress bar itself. It will increase in size from the left based on the % of progress.
-        const bar = this.add.rectangle(512-230, 384, 4, 28, 0xffffff);
+        // Barra de progresso
+        const bar = this.add.rectangle(512 - 230, 384, 4, 28, 0xffffff);
 
-        //  Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
+        // Atualiza a barra de progresso
         this.load.on('progress', (progress: number) => {
-
-            //  Update the progress bar (our bar is 464px wide, so 100% = 464px)
-            bar.width = 4 + (460 * progress);
-
+            bar.width = 4 + 460 * progress;
         });
     }
 
-    preload ()
-    {
-        //  Load the assets for the game - Replace with your own assets
+    preload() {
+        // Carrega os assets necessários para o jogo
         this.load.setPath('assets');
 
+        // Assets originais
         this.load.image('logo', 'logo.png');
         this.load.image('star', 'star.png');
+
+        // Novos assets
+        this.load.image('main-bg', 'main-bg.png');
+        this.load.image('header-button', 'Header2.png');
+        this.load.image('dialog-box', 'DialogBox1.png');
+        this.load.image('menu-background', 'Menu1.png');
     }
 
-    create ()
-    {
-        //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
-        //  For example, you can define global animations here, so we can use them in other scenes.
+    create() {
+        // Mensagem de carregamento concluído
+        const text = this.add
+            .text(512, 440, 'Carregamento concluído!', {
+                fontFamily: 'Arial',
+                fontSize: '24px',
+                color: '#ffffff',
+            })
+            .setOrigin(0.5);
 
-        //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
-        this.scene.start('MainMenu');
+        // Espera um segundo e vai para o menu principal
+        this.time.delayedCall(1000, () => {
+            this.scene.start('MainMenu');
+        });
     }
 }
