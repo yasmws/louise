@@ -6,11 +6,19 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        background-image: url('../assets/main-bg.png');
+        background-position: center;
+        background-size: cover;
     }
 
     .spritePosition {
         margin: 10px 0 0 10px;
         font-size: 0.8em;
+    }
+
+    #game-container {
+        border: none;
+        background: transparent;
     }
 
     .button {
@@ -44,18 +52,6 @@
 <main id="app">
     <phaser-game />
     <div>
-        <div>
-            <button class="button" (click)="changeScene()">Change Scene</button>
-        </div>
-        <div>
-            <button class="button" [disabled]="canMoveSprite" (click)="moveSprite()">Toggle Movement</button>
-        </div>
-        <div class="spritePosition">
-            Sprite Position:
-            <pre>{{ spritePosition | json }}</pre>
-        </div>
-        <div>
-            <button class="button" (click)="addSprite()">Add New Sprite</button>
-        </div>
+  
     </div>
 </main>

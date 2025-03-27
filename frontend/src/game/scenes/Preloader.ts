@@ -6,9 +6,7 @@ export class Preloader extends Scene {
     }
 
     init() {
-        // Criamos um fundo simples enquanto carrega
-        this.cameras.main.setBackgroundColor('#000000');
-
+     
         // Barra de carregamento - contorno
         this.add.rectangle(512, 384, 468, 32).setStrokeStyle(1, 0xffffff);
 
@@ -34,6 +32,8 @@ export class Preloader extends Scene {
         this.load.image('header-button', 'Header2.png');
         this.load.image('dialog-box', 'DialogBox1.png');
         this.load.image('menu-background', 'Menu1.png');
+        this.load.image('header-text', 'Header1.png');
+
     }
 
     create() {

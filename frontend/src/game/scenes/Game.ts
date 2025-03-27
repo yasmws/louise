@@ -1,8 +1,11 @@
 // Complete Game class with all logic including UI, music, random letter sequence puzzle, and transitions
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
+import io from 'socket.io-client';
+import { WebSocketService } from '../../services/websocket';
 
 export class Game extends Scene {
+
     private background!: Phaser.GameObjects.Image;
     private titleLouise!: Phaser.GameObjects.Text;
     private timerText!: Phaser.GameObjects.Text;
@@ -183,9 +186,21 @@ export class Game extends Scene {
 
     private tryAgainText!: Phaser.GameObjects.Text;
     private clueTextGroup!: Phaser.GameObjects.Container;
+    private socket: WebSocketService;
+
 
     constructor() {
         super('Game');
+
+        this.initSocket()
+    }
+
+
+    initSocket() {
+        this.socket = WebSocketService.getInstance();
+        this.socket.connect('ws://localhost:3000');
+
+    
     }
 
     // DESIGN

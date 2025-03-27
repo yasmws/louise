@@ -3,23 +3,8 @@ import { Scene } from 'phaser';
 
 export class GameOver extends Scene {
 
-    private background!: Phaser.GameObjects.Image;
-    private titleLouise!: Phaser.GameObjects.Text;
-    private timerText!: Phaser.GameObjects.Text;
-    private player1Text!: Phaser.GameObjects.Text;
-    private player2Text!: Phaser.GameObjects.Text;
-    private header!: Phaser.GameObjects.Graphics;
-    private leftClueText!: Phaser.GameObjects.Text;
-    private dotsPuzzle!: Phaser.GameObjects.Graphics;
-    private asciiPuzzleText!: Phaser.GameObjects.Text;
-    private finishPhaseBtn!: Phaser.GameObjects.Text;
-    private timeLeft: number = 60;
-    private timerEvent!: Phaser.Time.TimerEvent;
 
-    private boxLouise!: Phaser.GameObjects.Image;
-    private boxTimer!: Phaser.GameObjects.Image;
-    private boxPlayer1!: Phaser.GameObjects.Image;
-    private boxPlayer2!: Phaser.GameObjects.Image;
+    private header!: Phaser.GameObjects.Graphics;
     player1Progress!: Phaser.GameObjects.Graphics;
     player2Progress!: Phaser.GameObjects.Graphics;
     boxProgress1!: Phaser.GameObjects.Image;
@@ -41,16 +26,13 @@ export class GameOver extends Scene {
     preload() {
         this.load.audio('backgroundMusic', 'assets/audio/background.m4a');
         this.load.audio('winSound', 'assets/audio/winSound.mp3');
-
-        this.load.image('background', 'assets/main-bg.png');
         
         this.load.font('Jacques Francois', 'assets/fonts/JacquesFrancois-Regular.ttf');
         this.load.font('Love Light', 'assets/fonts/LoveLight-Regular.ttf');
     }
 
     create() {
-        // Adiciona o fundo
-        this.background = this.add.image(512, 384, 'background');
+      
         // Toca a música de fundo
         if (!this.bgMusic) {
             this.bgMusic = this.sound.add('backgroundMusic', { loop: true, volume: 0.1 });
@@ -65,10 +47,7 @@ export class GameOver extends Scene {
         // Sons de vitória, empate e derrota
         this.winSound = this.sound.add('winSound');
 
-        // Segunda camada do fundo com transparência
-        this.background = this.add.image(512, 384, 'background');
-        this.background.setAlpha(0.5);
-
+    
         // Texto de Game Over
         this.gameOverText = this.add.text(512, 200, 'E quem ganhou foi...', {
             fontFamily: 'Jacques Francois',

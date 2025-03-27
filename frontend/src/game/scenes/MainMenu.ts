@@ -1,219 +1,107 @@
 import { GameObjects, Scene } from 'phaser';
-import { EventBus } from '../EventBus';
 
 export class MainMenu extends Scene {
-    // Elementos de fundo
     background: GameObjects.Image;
     logo: GameObjects.Image;
     title: GameObjects.Text;
-    logoTween: Phaser.Tweens.Tween | null;
+    logoTween: Phaser.Tweens.Tween | null = null;
 
-    // Elementos do menu
     private menuBackground: GameObjects.Image;
     private playButton: GameObjects.Image;
     private instructionsButton: GameObjects.Image;
     private enterRoomButton: GameObjects.Image;
     private createRoomButton: GameObjects.Image;
-    private playText: GameObjects.Text;
     private instructionsText: GameObjects.Text;
     private enterRoomText: GameObjects.Text;
     private createRoomText: GameObjects.Text;
+
+    private instructionsDialog!: GameObjects.Container;
+    private joinRoomDialog!: GameObjects.Container;
+    private playerName: string = '';
+    private roomCode: string = '';
+    private nameInput!: HTMLInputElement;
+    private codeInput!: HTMLInputElement;
 
     constructor() {
         super('MainMenu');
     }
 
     preload() {
-        // Carrega os assets necessários caso ainda não tenham sido carregados
         this.load.setPath('assets');
-
-        if (!this.textures.exists('main-bg')) {
-            this.load.image('main-bg', 'main-bg.png');
-        }
-        if (!this.textures.exists('header-button')) {
-            this.load.image('header-button', 'Header2.png');
-        }
-        if (!this.textures.exists('dialog-box')) {
-            this.load.image('dialog-box', 'DialogBox1.png');
-        }
-        if (!this.textures.exists('menu-background')) {
-            this.load.image('menu-background', 'Menu1.png');
-        }
+        this.load.image('main-bg', 'main-bg.png');
+        this.load.image('header-button', 'Header2.png');
+        this.load.image('dialog-box', 'DialogBox1.png');
     }
 
     create() {
-        // Adiciona o plano de fundo principal (biblioteca)
-        this.background = this.add.image(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            'background'
-        );
-        this.background.setDisplaySize(
-            this.cameras.main.width,
-            this.cameras.main.height
-        );
+        const centerX = this.cameras.main.width / 2;
 
-        // Adiciona o título "Louise" na parte superior
-        this.title = this.add
-            .text(this.cameras.main.width / 2, 80, 'Louise.', {
-                fontFamily: 'cursive',
-                fontSize: '48px',
-                color: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 1,
-            })
-            .setOrigin(0.5)
-            .setDepth(100);
+        this.title = this.add.text(centerX, 80, 'Louise.', {
+            fontFamily: 'cursive',
+            fontSize: '48px',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 1,
+        }).setOrigin(0.5).setDepth(100);
 
-        // Adiciona o logo para compatibilidade com o método moveLogo
-        // Tornamos o logo invisível para evitar que ele apareça na tela
-        this.logo = this.add.image(512, 300, 'logo').setDepth(100);
-        this.logo.setAlpha(0); // Torna o logo invisível
+        this.logo = this.add.image(centerX, 300, 'logo').setDepth(100);
+        this.logo.setAlpha(0);
 
-        // Adiciona o fundo do menu (Menu1.png)
-        this.menuBackground = this.add.image(
-            this.cameras.main.width / 2,
-            400,
-            'menu-background'
-        );
-        this.menuBackground.setScale(0.8);
+        this.instructionsButton = this.add.image(centerX, 200, 'header-button').setScale(4).setInteractive();
+        this.enterRoomButton = this.add.image(centerX, 300, 'header-button').setScale(4).setInteractive();
+        this.createRoomButton = this.add.image(centerX, 400, 'header-button').setScale(4).setInteractive();
 
-        // Adiciona os botões de header (Jogar e Instruções)
-        this.playButton = this.add
-            .image(this.cameras.main.width / 2 - 150, 260, 'header-button')
-            .setInteractive();
-        this.instructionsButton = this.add
-            .image(this.cameras.main.width / 2 + 90, 260, 'header-button')
-            .setInteractive();
+        this.instructionsText = this.add.text(centerX, 200, 'Instruções', this.buttonTextStyle()).setOrigin(0.5);
+        this.enterRoomText = this.add.text(centerX, 300, 'Entrar na sala', this.buttonTextStyle(24)).setOrigin(0.5);
+        this.createRoomText = this.add.text(centerX, 400, 'Crie uma sala', this.buttonTextStyle(24)).setOrigin(0.5);
 
-        // Adiciona os balões de diálogo para as opções
-        this.enterRoomButton = this.add
-            .image(this.cameras.main.width / 2 - 150, 400, 'dialog-box')
-            .setInteractive();
-        this.createRoomButton = this.add
-            .image(this.cameras.main.width / 2 + 150, 350, 'dialog-box')
-            .setInteractive();
+        this.setupButtonInteractions(this.instructionsButton, () => this.showInstructions());
+        this.setupButtonInteractions(this.enterRoomButton, () => this.enterRoom());
+        this.setupButtonInteractions(this.createRoomButton, () => this.createRoom());
 
-        // Adiciona os textos para os botões
-        this.playText = this.add
-            .text(this.playButton.x, this.playButton.y, 'Jogar', {
-                fontFamily: 'serif',
-                fontSize: '24px',
-                color: '#000000',
-                fontStyle: 'bold',
-            })
-            .setOrigin(0.5);
-
-        this.instructionsText = this.add
-            .text(
-                this.instructionsButton.x,
-                this.instructionsButton.y,
-                'Instruções',
-                {
-                    fontFamily: 'serif',
-                    fontSize: '24px',
-                    color: '#000000',
-                    fontStyle: 'bold',
-                }
-            )
-            .setOrigin(0.5);
-
-        this.enterRoomText = this.add
-            .text(
-                this.enterRoomButton.x,
-                this.enterRoomButton.y,
-                'Entrar na sala',
-                {
-                    fontFamily: 'serif',
-                    fontSize: '24px',
-                    color: '#000000',
-                    fontStyle: 'bold',
-                }
-            )
-            .setOrigin(0.5);
-
-        this.createRoomText = this.add
-            .text(
-                this.createRoomButton.x,
-                this.createRoomButton.y,
-                'Crie uma sala',
-                {
-                    fontFamily: 'serif',
-                    fontSize: '24px',
-                    color: '#000000',
-                    fontStyle: 'bold',
-                }
-            )
-            .setOrigin(0.5);
-
-        // Configura eventos de interação para os botões
-        this.setupButtonInteractions(this.playButton, () => this.changeScene());
-        this.setupButtonInteractions(this.instructionsButton, () =>
-            this.showInstructions()
-        );
-        this.setupButtonInteractions(this.enterRoomButton, () =>
-            this.enterRoom()
-        );
-        this.setupButtonInteractions(this.createRoomButton, () =>
-            this.createRoom()
-        );
-
-        // Remove qualquer texto "PHASER" da cena
         this.removePhaserText();
-
-        // Notifica que a cena está pronta
-        EventBus.emit('current-scene-ready', this);
     }
 
-    // Este método procura e remove qualquer texto "PHASER" na cena
-    removePhaserText() {
-        // Procura por todos os objetos de texto na cena
-        this.children.list.forEach((child) => {
-            if (child instanceof Phaser.GameObjects.Text) {
-                const text = child as Phaser.GameObjects.Text;
-                // Se o texto contém "PHASER", remove-o
-                if (text.text.includes('PHASER')) {
-                    text.destroy();
-                }
-            }
-        });
-
-        // Também procura por imagens que podem ter o nome relacionado ao Phaser
-        this.children.list.forEach((child) => {
-            if (child instanceof Phaser.GameObjects.Image) {
-                const image = child as Phaser.GameObjects.Image;
-                // Se a textura tiver um nome relacionado ao Phaser
-                if (image.texture.key.toLowerCase().includes('phaser')) {
-                    image.setVisible(false);
-                }
-            }
-        });
+    private buttonTextStyle(size = 20) {
+        return {
+            fontFamily: 'serif',
+            fontSize: `${size}px`,
+            color: '#000000',
+            fontStyle: 'bold'
+        };
     }
 
-    // Configuração de interações para botões
-    private setupButtonInteractions(
-        button: GameObjects.Image,
-        callback: Function
-    ) {
+    private setupButtonInteractions(button: GameObjects.Image, callback: Function) {
+        const normalScale = 4;
+        const hoverScale = 4.2;
+        const pressedScale = 3.9;
+
         button
             .on('pointerover', () => {
-                button.setScale(1.05);
+                button.setScale(hoverScale);
                 this.input.setDefaultCursor('pointer');
             })
             .on('pointerout', () => {
-                button.setScale(1);
+                button.setScale(normalScale);
                 this.input.setDefaultCursor('default');
             })
             .on('pointerdown', () => {
-                button.setScale(0.95);
+                button.setScale(pressedScale);
             })
             .on('pointerup', () => {
-                button.setScale(1);
+                button.setScale(hoverScale);
                 callback();
             });
     }
 
-    // Método moveLogo para compatibilidade com app.component.ts
+    removePhaserText() {
+        this.children.list.forEach((child) => {
+            if (child instanceof Phaser.GameObjects.Text && child.text.includes('PHASER')) {
+                child.destroy();
+            }
+        });
+    }
+
     moveLogo(vueCallback: ({ x, y }: { x: number; y: number }) => void) {
         if (this.logoTween) {
             if (this.logoTween.isPlaying()) {
@@ -229,12 +117,10 @@ export class MainMenu extends Scene {
                 yoyo: true,
                 repeat: -1,
                 onUpdate: () => {
-                    if (vueCallback) {
-                        vueCallback({
-                            x: Math.floor(this.logo.x),
-                            y: Math.floor(this.logo.y),
-                        });
-                    }
+                    vueCallback?.({
+                        x: Math.floor(this.logo.x),
+                        y: Math.floor(this.logo.y),
+                    });
                 },
             });
         }
@@ -248,18 +134,156 @@ export class MainMenu extends Scene {
         this.scene.start('Game');
     }
 
+    createRoom() {
+        if (this.logoTween) this.logoTween.stop();
+        this.scene.start('CreateRoom');
+    }
+
     showInstructions() {
-        console.log('Mostrando instruções');
-        // Implementar lógica para mostrar instruções
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height / 2;
+
+        const box = this.add.rectangle(centerX, centerY, 500, 250, 0x000000, 0.7)
+            .setStrokeStyle(2, 0xffffff).setOrigin(0.5);
+
+        const text = this.add.text(centerX, centerY - 50,
+            'Resolva os enigmas de braille\ne complete a tradução da frase!',
+            {
+                fontFamily: 'serif',
+                fontSize: '18px',
+                color: '#ffffff',
+                align: 'center'
+            }).setOrigin(0.5);
+
+        const closeButton = this.add.image(centerX, centerY + 80, 'header-button')
+            .setScale(2).setInteractive();
+
+        const closeText = this.add.text(centerX, centerY + 80, 'Fechar', {
+            fontFamily: 'serif',
+            fontSize: '18px',
+            color: '#000000'
+        }).setOrigin(0.5);
+
+        closeButton.on('pointerup', () => this.instructionsDialog?.destroy());
+
+        this.instructionsDialog = this.add.container(0, 0, [box, text, closeButton, closeText]);
     }
 
     enterRoom() {
-        console.log('Entrando na sala');
-        this.changeScene();
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height / 2;
+
+        const blocker = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.001)
+        .setOrigin(0)
+        .setInteractive();
+    
+        // Cria a caixa visual do dialog
+        const box = this.add.rectangle(centerX, centerY - 10, 400, 400, 0x000000, 0.7)
+            .setStrokeStyle(2, 0xffffff)
+            .setOrigin(0.5);
+    
+        const title = this.add.text(centerX, centerY - 100, 'Entrar na Sala', {
+            fontFamily: 'serif',
+            fontSize: '22px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+    
+        // Botão de confirmar
+        const confirmBtn = this.add.image(centerX, centerY + 90, 'header-button')
+            .setScale(2)
+            .setInteractive();
+    
+        const confirmText = this.add.text(centerX, centerY + 90, 'Confirmar', {
+            fontFamily: 'serif',
+            fontSize: '18px',
+            color: '#000000'
+        }).setOrigin(0.5);
+    
+        confirmBtn.on('pointerup', () => {
+            this.nameInput?.remove();
+            this.codeInput?.remove();
+            this.joinRoomDialog?.destroy();
+            blocker.destroy(); 
+            this.confirmJoinRoom()
+        });
+    
+        this.joinRoomDialog = this.add.container(0, 0, [
+            box, title, confirmBtn, confirmText
+        ]);
+    
+        // Inputs HTML reais
+        const canvasRect = this.game.canvas.getBoundingClientRect();
+    
+        this.nameInput = document.createElement('input');
+        this.nameInput.type = 'text';
+        this.nameInput.placeholder = 'Seu nome';
+        Object.assign(this.nameInput.style, {
+            position: 'fixed',
+            left: `${canvasRect.left + centerX - 125}px`,
+            top: `${canvasRect.top + centerY - 45}px`,
+            width: '250px',
+            padding: '10px',
+            fontSize: '18px',
+            borderRadius: '8px',
+            border: '2px solid #999',
+            textAlign: 'center',
+            zIndex: '1000',
+        });
+        document.body.appendChild(this.nameInput);
+    
+        this.codeInput = document.createElement('input');
+        this.codeInput.type = 'text';
+        this.codeInput.placeholder = 'Código da sala';
+        Object.assign(this.codeInput.style, {
+            position: 'fixed',
+            left: `${canvasRect.left + centerX - 125}px`,
+            top: `${canvasRect.top + centerY + 10}px`,
+            width: '250px',
+            padding: '10px',
+            fontSize: '18px',
+            borderRadius: '8px',
+            border: '2px solid #999',
+            textAlign: 'center',
+            zIndex: '1000',
+        });
+        document.body.appendChild(this.codeInput);
+
+        const cancelBtn = this.add.image(centerX, centerY + 130, 'header-button')
+        .setScale(2)
+        .setInteractive();
+        const cancelText = this.add.text(centerX , centerY + 130, 'Cancelar', {
+            fontFamily: 'serif',
+            fontSize: '18px',
+            color: '#000000'
+        }).setOrigin(0.5);
+
+        cancelBtn.on('pointerup', () => {
+            this.nameInput?.remove();
+            this.codeInput?.remove();
+            this.joinRoomDialog?.destroy();
+            cancelBtn.destroy();
+            cancelText.destroy();
+            blocker.destroy();
+        });
     }
 
-    createRoom() {
-        console.log('Criando uma sala');
-        this.changeScene();
+    private confirmJoinRoom() {
+        const playerName = this.nameInput?.value.trim();
+        const roomCode = this.codeInput?.value.trim();
+    
+        if (!playerName || !roomCode) {
+            alert('Preencha seu nome e código da sala!');
+            return;
+        }
+    
+        this.nameInput?.remove();
+        this.codeInput?.remove();
+        this.joinRoomDialog?.destroy();
+    
+        this.scene.start('Game', {
+            playerName,
+            roomCode
+        });
     }
+
 }
