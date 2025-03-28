@@ -382,57 +382,14 @@ export class Game extends Scene {
     
     // sentence text space
     private renderClueText(): void {
-        const clue = this.chosenClue;
-        const highlightChar = this.currentChar;
-    
-        // Clean up previous text if needed
-        if (this.leftClueText) {
-            this.leftClueText.destroy();
-        }
-    
-        const clueGroup = this.add.container(0, 0);
-        const maxWidth = 230;
-        const fontSize = 30;
-        const lineHeight = 44;
-        const startX = 90;
-        const startY = 250;
-        let x = 0;
-        let y = 0;
-    
-        let line: Phaser.GameObjects.Text[] = [];
-    
-        clue.split('').forEach((char, i) => {
-            const isHighlight = char.toUpperCase() === highlightChar.toUpperCase();
-            const color = isHighlight ? '#d97706' : '#000000';
-    
-            const charText = this.add.text(0, 0, char, {
-                fontFamily: 'Special Elite',
-                fontSize: `${fontSize}px`,
-                color: color
-            }).setOrigin(0, 0);
-    
-            // Wrap line if it would go beyond max width
-            if (x + charText.width > maxWidth) {
-                // Position the previous line
-                line.forEach(t => t.y += y);
-                y += lineHeight;
-                x = 0;
-                line = [];
-            }
-    
-            charText.setPosition(x + startX, y + startY);
-            clueGroup.add(charText);
-            line.push(charText);
-            x += charText.width;
-        });
-    
-        if (this.clueTextGroup) {
-            this.clueTextGroup.destroy();
-        }
-        
-        this.clueTextGroup = this.add.container(0, 0);        
-    }
-    
+        this.add.text(200, 330, this.chosenClue, {
+            fontFamily: 'Love Light',
+            fontSize: '40px',
+            color: '#000000',
+            wordWrap: { width: 280, useAdvancedWrap: true },
+            align: 'center'
+        }).setOrigin(0.5);
+    }   
     
 
     // braille text space
