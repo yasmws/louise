@@ -31,18 +31,26 @@ export class MainMenu extends Scene {
         this.load.image('main-bg', 'main-bg.png');
         this.load.image('header-button', 'Header2.png');
         this.load.image('dialog-box', 'DialogBox1.png');
+        this.load.font('Love Light', 'assets/fonts/LoveLight-Regular.ttf');
+    
     }
 
     create() {
         const centerX = this.cameras.main.width / 2;
 
-        this.title = this.add.text(centerX, 80, 'Louise.', {
-            fontFamily: 'cursive',
+        /*this.title = this.add.text(centerX, 80, 'Louise.', {
+            fontFamily: 'Love Light',
             fontSize: '48px',
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 1,
         }).setOrigin(0.5).setDepth(100);
+        */
+
+        this.title = this.add.text(512, 100, 'Louise.', {
+            fontFamily: 'Love Light', fontSize: '150px', color: '#C2A385', stroke: '#ffffff', strokeThickness: 5,
+            shadow: { color: '#000000', fill: true, offsetX: 5, offsetY: 5, blur: 5 }, letterSpacing: 5
+        }).setOrigin(0.5);
 
         this.logo = this.add.image(centerX, 300, 'logo').setDepth(100);
         this.logo.setAlpha(0);

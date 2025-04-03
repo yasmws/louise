@@ -224,7 +224,7 @@ export class Game extends Scene {
         this.bgMusic = this.sound.add('backgroundMusic', { loop: true, volume: 0.1 });
         this.bgMusic.play();
 
-        this.header = this.add.graphics();
+        /*this.header = this.add.graphics();
         const headerWidth = 1080, headerHeight = 100, dotSpacing = 10, dotRadius = 3;
         const rows = Math.floor(headerHeight / dotSpacing);
         const startColor = new Phaser.Display.Color(200, 150, 100);
@@ -238,7 +238,7 @@ export class Game extends Scene {
                 this.header.fillCircle(x, y, dotRadius);
             }
         }
-        this.header.setPosition(0, 0);
+        this.header.setPosition(0, 0);*/
 
         this.titleLouise = this.add.text(512, 100, 'Louise', {
             fontFamily: 'Love Light', fontSize: '150px', color: '#C2A385', stroke: '#ffffff', strokeThickness: 5,
@@ -599,6 +599,7 @@ export class Game extends Scene {
 
     private finishPhase(): void
     {
+        this.bgMusic.stop();
         this.gameOver();
     }
 }

@@ -34,9 +34,8 @@ export class GameOver extends Scene {
     create() {
       
         // Toca a música de fundo
-        if (!this.bgMusic) {
-            this.bgMusic = this.sound.add('backgroundMusic', { loop: true, volume: 0.1 });
-            this.bgMusic.play();
+        if (this.bgMusic) {
+            this.bgMusic.stop();
         }
         
 
