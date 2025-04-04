@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { roomService } from '../../services/room';
 
 export class WaitingRoom extends Scene {
     private messageText!: Phaser.GameObjects.Text;
@@ -11,6 +12,14 @@ export class WaitingRoom extends Scene {
     create() {
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
+
+             // Mostrar nome da sala
+        this.add.text(centerX, centerY - 100, `Sala: ${roomService.getRoom().id}`, {
+            fontFamily: 'serif',
+            fontSize: '24px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+    
 
         // Texto inicial de espera
         this.messageText = this.add.text(centerX, centerY, 'Aguardando outros jogadores...', {
@@ -27,7 +36,7 @@ export class WaitingRoom extends Scene {
         }).setOrigin(0.5);
 
         // Aguarda 3 segundos antes de iniciar a contagem regressiva
-        this.time.delayedCall(3000, () => this.startCountdown(), [], this);
+        //this.time.delayedCall(3000, () => this.startCountdown(), [], this);
     }
 
     private startCountdown() {

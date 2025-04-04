@@ -1,5 +1,8 @@
 import { Scene, GameObjects } from 'phaser';
-import { WebSocketService } from '../../services/websocket';
+import { webSocketService, WebSocketService } from '../../services/websocket';
+import { User } from '../../interfaces/user.interface';
+import { userService } from '../../services/user';
+import { roomService } from '../../services/room';
 
 export class CreateRoom extends Scene {
     private createRoomButton: GameObjects.Image;
@@ -17,8 +20,13 @@ export class CreateRoom extends Scene {
 
     private nameButton!: GameObjects.Image;
     private nameButtonText!: GameObjects.Text;
+    private playerName: string = '';
+    private nameInput!: HTMLInputElement;
+    private roomInput!: HTMLInputElement;
 
-    constructor() {
+    constructor(
+
+    ) {
         super('CreateRoom');
     }
 
@@ -26,10 +34,9 @@ export class CreateRoom extends Scene {
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
 
-        this.socket = WebSocketService.getInstance();
-        this.socket.connect('ws://localhost:3000');
-
-        // Fundo do título
+        this.socket = webSocketService;
+     
+       // Fundo do título
         this.add.image(centerX, 80, 'header-button').setScale(6);
 
         // Título
@@ -118,93 +125,113 @@ export class CreateRoom extends Scene {
     private openNameDialog() {
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
-
-        const box = this.add.rectangle(centerX, centerY, 350, 200, 0x000000, 0.7)
+    
+        const blocker = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.001)
+            .setOrigin(0)
+            .setInteractive();
+    
+        const box = this.add.rectangle(centerX, centerY, 400, 300, 0x000000, 0.7)
             .setStrokeStyle(2, 0xffffff)
             .setOrigin(0.5);
-
-        const title = this.add.text(centerX, centerY - 70, 'Digite um nome para sala', {
+    
+        const title = this.add.text(centerX, centerY - 110, 'Criação da Sala', {
             fontFamily: 'serif',
-            fontSize: '20px',
+            fontSize: '22px',
             color: '#ffffff'
         }).setOrigin(0.5);
-
-        const inputBox = this.add.rectangle(centerX, centerY - 20, 250, 40, 0xffffff)
-            .setStrokeStyle(2, 0x999999)
-            .setOrigin(0.5);
-
-        const inputText = this.add.text(centerX - 115, centerY - 30, '', {
-            fontFamily: 'serif',
-            fontSize: '18px',
-            color: '#000000',
-            wordWrap: { width: 240 }
-        });
-
-        this.input.keyboard!.on('keydown', (event: KeyboardEvent) => {
-            if (!this.nameDialog) return;
-
-            if (event.key === 'Backspace') {
-                this.roomName = this.roomName.slice(0, -1);
-            } else if (event.key === 'Enter') {
-                this.confirmRoomName();
-            } else if (event.key.length === 1) {
-                this.roomName += event.key;
-            }
-
-            inputText.setText(this.roomName);
-        });
-
-        const confirmBtn = this.add.image(centerX, centerY + 50, 'header-button')
+    
+        const confirmBtn = this.add.image(centerX, centerY + 90, 'header-button')
             .setScale(2)
             .setInteractive();
-
-        const confirmText = this.add.text(centerX, centerY + 50, 'Confirmar', {
+    
+        const confirmText = this.add.text(centerX, centerY + 90, 'Confirmar', {
             fontFamily: 'serif',
             fontSize: '18px',
             color: '#000000'
         }).setOrigin(0.5);
-
-        confirmBtn.on('pointerup', () => this.confirmRoomName());
-
+    
+        confirmBtn.on('pointerup', () => {
+            this.roomInput?.remove();
+            this.nameInput?.remove();
+            this.nameDialog?.destroy();
+            blocker.destroy();
+            this.confirmRoomName();
+        });
+    
         this.nameDialog = this.add.container(0, 0, [
-            box, title, inputBox, inputText, confirmBtn, confirmText
+            box, title, confirmBtn, confirmText
         ]);
+    
+        // Criação dos inputs HTML
+        const canvasRect = this.game.canvas.getBoundingClientRect();
+    
+        this.roomInput = document.createElement('input');
+        this.roomInput.type = 'text';
+        this.roomInput.placeholder = 'Nome da sala';
+        Object.assign(this.roomInput.style, {
+            position: 'fixed',
+            left: `${canvasRect.left + centerX - 125}px`,
+            top: `${canvasRect.top + centerY - 50}px`,
+            width: '250px',
+            padding: '10px',
+            fontSize: '18px',
+            borderRadius: '8px',
+            border: '2px solid #999',
+            textAlign: 'center',
+            zIndex: '1000',
+        });
+        document.body.appendChild(this.roomInput);
+    
+        this.nameInput = document.createElement('input');
+        this.nameInput.type = 'text';
+        this.nameInput.placeholder = 'Seu nome';
+        Object.assign(this.nameInput.style, {
+            position: 'fixed',
+            left: `${canvasRect.left + centerX - 125}px`,
+            top: `${canvasRect.top + centerY + 10}px`,
+            width: '250px',
+            padding: '10px',
+            fontSize: '18px',
+            borderRadius: '8px',
+            border: '2px solid #999',
+            textAlign: 'center',
+            zIndex: '1000',
+        });
+        document.body.appendChild(this.nameInput);
     }
 
     private confirmRoomName() {
-        if (!this.roomName || this.roomName.trim().length === 0) {
-            alert('Digite um nome válido!');
+        const roomName = this.roomInput?.value.trim();
+        const playerName = this.nameInput?.value.trim();
+    
+        if (!roomName || !playerName) {
+            alert('Preencha o nome da sala e do jogador!');
             return;
         }
-
-        // Oculta os elementos de entrada
-        this.nameDialog.destroy();
+    
+        this.roomName = roomName;
+        this.playerName = playerName;
+    
+        this.loadingBox.setVisible(true);
+        this.loadingText.setVisible(true);
+    
         this.nameButton.setVisible(false);
         this.nameButtonText.setVisible(false);
         this.roundButtons.forEach(btn => btn.setVisible(false));
         this.roundTexts.forEach(txt => txt.setVisible(false));
 
-        this.loadingBox.setVisible(true);
-        this.loadingText.setVisible(true);
+        userService
+        .createUser(this.playerName);
 
-        this.socket.emit('createRoom', {
-            name: this.roomName,
-            rounds: this.selectedRounds
+        roomService
+        .createRoom(this.selectedRounds, userService.getUser(), this.roomName)
+        .then((res) => {
+            this.scene.start('WaitingRoom');
+
+          })
+          .catch((err) => {
+            alert('Erro ao criar sala: ' + err.message);
         });
-
-        setTimeout(() => {
-           this.scene.start('WaitingRoom')
-        }, 600)
-
-        // this.socket.on('roomCreated', (data) => {
-        //     this.loadingBox.setVisible(false);
-        //     this.loadingText.setVisible(false);
-        //     this.scene.start('Game', {
-        //         roomName: this.roomName,
-        //         rounds: this.selectedRounds,
-        //         roomId: data.roomId
-        //     });
-        // });
     }
 
     shutdown() {

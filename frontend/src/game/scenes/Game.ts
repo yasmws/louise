@@ -2,7 +2,7 @@
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 import io from 'socket.io-client';
-import { WebSocketService } from '../../services/websocket';
+import { WebSocketService, webSocketService } from '../../services/websocket';
 
 export class Game extends Scene {
 
@@ -197,10 +197,8 @@ export class Game extends Scene {
 
 
     initSocket() {
-        this.socket = WebSocketService.getInstance();
+        this.socket = webSocketService;
         this.socket.connect('ws://localhost:3000');
-
-    
     }
 
     // DESIGN

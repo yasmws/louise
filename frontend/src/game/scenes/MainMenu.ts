@@ -1,4 +1,6 @@
 import { GameObjects, Scene } from 'phaser';
+import { userService } from '../../services/user';
+import { roomService } from '../../services/room';
 
 export class MainMenu extends Scene {
     background: GameObjects.Image;
@@ -200,6 +202,7 @@ export class MainMenu extends Scene {
         }).setOrigin(0.5);
     
         confirmBtn.on('pointerup', () => {
+
             this.nameInput?.remove();
             this.codeInput?.remove();
             this.joinRoomDialog?.destroy();
@@ -275,15 +278,21 @@ export class MainMenu extends Scene {
             alert('Preencha seu nome e código da sala!');
             return;
         }
+
+        userService
+        .createUser(playerName);
+
+        roomService
+        .joinRoom(userService.getUser(), roomCode)
+        .then((res) => {
+            this.scene.start('WaitingRoom');
+        })
+
     
         this.nameInput?.remove();
         this.codeInput?.remove();
         this.joinRoomDialog?.destroy();
     
-        this.scene.start('Game', {
-            playerName,
-            roomCode
-        });
     }
 
 }

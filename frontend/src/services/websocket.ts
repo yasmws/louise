@@ -1,18 +1,10 @@
-// services/WebSocketService.ts
 import { io, Socket } from 'socket.io-client';
 
 export class WebSocketService {
     private static instance: WebSocketService;
     private socket: Socket | null = null;
 
-    private constructor() {}
-
-    public static getInstance(): WebSocketService {
-        if (!WebSocketService.instance) {
-            WebSocketService.instance = new WebSocketService();
-        }
-        return WebSocketService.instance;
-    }
+    constructor() {}
 
     public connect(url: string): void {
         if (this.socket && this.socket.connected) {
@@ -43,9 +35,10 @@ export class WebSocketService {
         });
     }
 
-    public emit(event: string, data: any): void {
+    public emit(event: string, ...args: any[]): void {
         if (this.socket && this.socket.connected) {
-            this.socket.emit(event, data);
+            this.socket.emit(event, ...args);
+            console.log('emitiu', event, ...args);
         } else {
             console.warn('[Socket.IO] Não conectado, não foi possível emitir', event);
         }
@@ -66,4 +59,10 @@ export class WebSocketService {
     public isConnected(): boolean {
         return !!this.socket?.connected;
     }
+
+    public getSocketId(): string | undefined {
+        return this.socket?.id;
+    }
 }
+
+export const webSocketService = new WebSocketService();
