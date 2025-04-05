@@ -1,60 +1,63 @@
+import { Observable, throwError } from 'rxjs';
 import { Room } from "../interfaces/room.interface";
 import { User } from "../interfaces/user.interface";
 import { webSocketService } from "./websocket";
 
 export class room {
+  private room?: Room;
 
-    private room?: Room;
+  public getRoom(): Room {
+    if (!this.room) {
+      throw new Error('Room not created');
+    }
+    return this.room;
+  }
 
-    public getRoom(): Room {
-        if (!this.room) {
-            throw new Error('Room not created')
+  public createRoom(steps: number, owner: User, name: string): Observable<any> {
+    return new Observable(subscriber => {
+      webSocketService.emit('create-room', name, owner.name, steps, (response: any) => {
+        if (response === 'room already exists') {
+          subscriber.error(new Error('Sala já existe'));
+          return;
         }
 
-        return this.room;
-    }
-    
-    public createRoom(steps: number, owner: User, name: string): Promise<any> {
-    
-        return new Promise((resolve, reject) => {
-            webSocketService.emit(
-                'create-room',
-                name,
-                owner.name,
-                steps,
-                (response: any) => {
-                    if (response === 'room already exists') {
-                        return reject(new Error('Sala já existe'));
-                    }
+        this.room = new Room(response);
+        subscriber.next(response);
+        subscriber.complete();
+      });
+    });
+  }
 
-                    this.room = new Room(response)
-    
-                    resolve(response);
-                }
-            );
-        });
-    }
+  public joinRoom(user: User, name: string): Observable<any> {
+    return new Observable(subscriber => {
+      webSocketService.emit('join-room', name, user.name, (response: string | string[]) => {
 
-    public joinRoom(user: User, name: string): Promise<any> {
-    
-        return new Promise((resolve, reject) => {
-            webSocketService.emit(
-                'join-room',
-                name,
-                user.name,
-                (response: any) => {
-                    // se quiser, você pode validar a resposta aqui antes de resolver
-                    if (response === 'room already exists') {
-                        return reject(new Error('Sala já existe'));
-                    }
+        if (typeof response === 'string') {
 
-                    this.room = new Room(response)
-    
-                    resolve(response);
-                }
-            );
-        });
-    }
+          if (response === 'room already exists') {
+            subscriber.error(new Error('Sala já existe'));
+            return;
+          } else if (response === 'room dos not exist') {
+            subscriber.error(new Error('Sala não encontrada'));
+            return;
+          } else {
+            subscriber.error(new Error('Aconteceu um erro inesperado'));
+            return;
+          }
+        }  
+
+        this.room = new Room(name);
+        this.room.adversary = response[0];
+
+        subscriber.next(response);
+        subscriber.complete();
+      });
+    });
+  }
+
+  public setAdversary(adversary: string): void {
+    this.room!.adversary = adversary;
+  }
 }
 
 export const roomService = new room();

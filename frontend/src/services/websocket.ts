@@ -1,68 +1,95 @@
+import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
+import {
+  Observable,
+  Subject,
+  ReplaySubject,
+  takeUntil,
+  share,
+} from 'rxjs';
 
+@Injectable({
+  providedIn: 'root'
+})
 export class WebSocketService {
-    private static instance: WebSocketService;
-    private socket: Socket | null = null;
+  private socket: Socket | null = null;
+  private disconnect$ = new Subject<void>();
+  private eventsMap = new Map<string, ReplaySubject<any>>();
 
-    constructor() {}
-
-    public connect(url: string): void {
-        if (this.socket && this.socket.connected) {
-            console.warn('[Socket.IO] Já está conectado.');
-            return;
-        }
-
-        this.socket = io(url, {
-            transports: ['websocket'],
-            reconnectionAttempts: 5
-        });
-
-        this.socket.on('connect', () => {
-            console.log('[Socket.IO] Conectado!', this.socket!.id);
-        });
-
-        this.socket.on('disconnect', (reason) => {
-            console.log('[Socket.IO] Desconectado:', reason);
-        });
-
-        this.socket.on('connect_error', (err) => {
-            console.error('[Socket.IO] Erro de conexão:', err.message);
-        });
-
-        // Exemplo: ouça mensagens genéricas
-        this.socket.on('message', (data) => {
-            console.log('[Socket.IO] Mensagem recebida:', data);
-        });
+  public connect(url: string): void {
+    if (this.socket && this.socket.connected) {
+      console.warn('[Socket.IO] Já está conectado.');
+      return;
     }
 
-    public emit(event: string, ...args: any[]): void {
-        if (this.socket && this.socket.connected) {
-            this.socket.emit(event, ...args);
-            console.log('emitiu', event, ...args);
-        } else {
-            console.warn('[Socket.IO] Não conectado, não foi possível emitir', event);
-        }
+    this.socket = io(url, {
+      transports: ['websocket'],
+      reconnectionAttempts: 5
+    });
+
+    this.socket.on('connect', () => {
+      console.log('[Socket.IO] Conectado!', this.socket!.id);
+    });
+
+    this.socket.on('disconnect', reason => {
+      console.log('[Socket.IO] Desconectado:', reason);
+      this.disconnect$.next();
+    });
+
+    this.socket.on('connect_error', err => {
+      console.error('[Socket.IO] Erro de conexão:', err.message);
+    });
+  }
+
+  public emit(event: string, ...args: any[]): void {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit(event, ...args);
+      console.log('[Socket.IO] Emissão:', event, ...args);
+    } else {
+      console.warn('[Socket.IO] Não conectado, não foi possível emitir', event);
+    }
+  }
+
+  /**
+   * Retorna um Observable do evento especificado.
+   * Usa multicasting com ReplaySubject para reemitir a última mensagem para novos assinantes.
+   */
+  public on<T = any>(event: string): Observable<T> {
+    if (this.eventsMap.has(event)) {
+      return this.eventsMap.get(event)!.asObservable();
     }
 
-    public on(event: string, callback: (data: any) => void): void {
-        this.socket?.on(event, callback);
-    }
+    const event$ = new ReplaySubject<T>(1); // último valor para novos assinantes
+    this.eventsMap.set(event, event$);
 
-    public off(event: string, callback?: (data: any) => void): void {
-        this.socket?.off(event, callback);
-    }
+    this.socket?.on(event, (data: T) => {
+      event$.next(data);
+    });
 
-    public disconnect(): void {
-        this.socket?.disconnect();
-    }
+    return event$.asObservable().pipe(
+      takeUntil(this.disconnect$), // limpa ao desconectar
+      share() // multicast para múltiplos assinantes
+    );
+  }
 
-    public isConnected(): boolean {
-        return !!this.socket?.connected;
-    }
+  public off(event: string): void {
+    this.socket?.off(event);
+    this.eventsMap.delete(event);
+  }
 
-    public getSocketId(): string | undefined {
-        return this.socket?.id;
-    }
+  public disconnect(): void {
+    this.disconnect$.next();
+    this.socket?.disconnect();
+    this.socket = null;
+    this.eventsMap.clear();
+  }
+
+  public isConnected(): boolean {
+    return !!this.socket?.connected;
+  }
+
+  public getSocketId(): string | undefined {
+    return this.socket?.id;
+  }
 }
-
 export const webSocketService = new WebSocketService();
