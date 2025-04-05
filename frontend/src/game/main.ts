@@ -6,6 +6,7 @@ import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
 import { CreateRoom } from './scenes/CreateRoom';
 import { WaitingRoom } from './scenes/WaitingRoom';
+import { WaitingEnterRoom } from './scenes/WaitingEnterRoom';
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
@@ -13,8 +14,8 @@ const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
     width: 1080,
     height: 720,
-    transparent: true, // <-- ESSENCIAL
-    backgroundColor: undefined, // ou 'rgba(0,0,0,0)'
+    transparent: true,
+    backgroundColor: undefined,
     parent: 'game-container',
     scene: [
         Boot,
@@ -23,7 +24,8 @@ const config: Phaser.Types.Core.GameConfig = {
         MainGame,
         GameOver,
         CreateRoom,
-        WaitingRoom
+        WaitingRoom,
+        WaitingEnterRoom
     ]
 };
 
