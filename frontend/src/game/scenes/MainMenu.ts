@@ -1,6 +1,8 @@
 import { GameObjects, Scene } from 'phaser';
 import { userService } from '../../services/user';
 import { roomService } from '../../services/room';
+import { EnterRoomComponent } from '../components/EnterRoomComponent';
+import { of, switchMap } from 'rxjs';
 
 export class MainMenu extends Scene {
     background: GameObjects.Image;
@@ -8,8 +10,6 @@ export class MainMenu extends Scene {
     title: GameObjects.Text;
     logoTween: Phaser.Tweens.Tween | null = null;
 
-    private menuBackground: GameObjects.Image;
-    private playButton: GameObjects.Image;
     private instructionsButton: GameObjects.Image;
     private enterRoomButton: GameObjects.Image;
     private createRoomButton: GameObjects.Image;
@@ -18,11 +18,6 @@ export class MainMenu extends Scene {
     private createRoomText: GameObjects.Text;
 
     private instructionsDialog!: GameObjects.Container;
-    private joinRoomDialog!: GameObjects.Container;
-    private playerName: string = '';
-    private roomCode: string = '';
-    private nameInput!: HTMLInputElement;
-    private codeInput!: HTMLInputElement;
 
     constructor() {
         super('MainMenu');
@@ -172,127 +167,36 @@ export class MainMenu extends Scene {
     }
 
     enterRoom() {
-        const centerX = this.cameras.main.width / 2;
-        const centerY = this.cameras.main.height / 2;
 
-        const blocker = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.001)
-        .setOrigin(0)
-        .setInteractive();
-    
-        // Cria a caixa visual do dialog
-        const box = this.add.rectangle(centerX, centerY - 10, 400, 400, 0x000000, 0.7)
-            .setStrokeStyle(2, 0xffffff)
-            .setOrigin(0.5);
-    
-        const title = this.add.text(centerX, centerY - 100, 'Entrar na Sala', {
-            fontFamily: 'serif',
-            fontSize: '22px',
-            color: '#ffffff'
-        }).setOrigin(0.5);
-    
-        // Botão de confirmar
-        const confirmBtn = this.add.image(centerX, centerY + 90, 'header-button')
-            .setScale(2)
-            .setInteractive();
-    
-        const confirmText = this.add.text(centerX, centerY + 90, 'Confirmar', {
-            fontFamily: 'serif',
-            fontSize: '18px',
-            color: '#000000'
-        }).setOrigin(0.5);
-    
-        confirmBtn.on('pointerup', () => {
+        const enterRoomComponent = new EnterRoomComponent(this);
 
-            this.nameInput?.remove();
-            this.codeInput?.remove();
-            this.joinRoomDialog?.destroy();
-            blocker.destroy(); 
-            this.confirmJoinRoom()
+        enterRoomComponent.show()
+        .pipe(
+            switchMap( (result: any) => {
+                if (!result) {
+                    console.log('Usuário cancelou');
+                    return of(null)
+                } 
+
+                const { name, code } = result;
+
+                userService
+                .createUser(name);
+    
+                return (
+                    roomService
+                    .joinRoom(userService.getUser(), code)
+                )
+            })
+        )
+        .subscribe({
+            next: result => {
+                this.scene.start('WaitingEnterRoom');
+            },
+            error: error => {
+                alert(error.message)
+            }
         });
-    
-        this.joinRoomDialog = this.add.container(0, 0, [
-            box, title, confirmBtn, confirmText
-        ]);
-    
-        // Inputs HTML reais
-        const canvasRect = this.game.canvas.getBoundingClientRect();
-    
-        this.nameInput = document.createElement('input');
-        this.nameInput.type = 'text';
-        this.nameInput.placeholder = 'Seu nome';
-        Object.assign(this.nameInput.style, {
-            position: 'fixed',
-            left: `${canvasRect.left + centerX - 125}px`,
-            top: `${canvasRect.top + centerY - 45}px`,
-            width: '250px',
-            padding: '10px',
-            fontSize: '18px',
-            borderRadius: '8px',
-            border: '2px solid #999',
-            textAlign: 'center',
-            zIndex: '1000',
-        });
-        document.body.appendChild(this.nameInput);
-    
-        this.codeInput = document.createElement('input');
-        this.codeInput.type = 'text';
-        this.codeInput.placeholder = 'Código da sala';
-        Object.assign(this.codeInput.style, {
-            position: 'fixed',
-            left: `${canvasRect.left + centerX - 125}px`,
-            top: `${canvasRect.top + centerY + 10}px`,
-            width: '250px',
-            padding: '10px',
-            fontSize: '18px',
-            borderRadius: '8px',
-            border: '2px solid #999',
-            textAlign: 'center',
-            zIndex: '1000',
-        });
-        document.body.appendChild(this.codeInput);
-
-        const cancelBtn = this.add.image(centerX, centerY + 130, 'header-button')
-        .setScale(2)
-        .setInteractive();
-        const cancelText = this.add.text(centerX , centerY + 130, 'Cancelar', {
-            fontFamily: 'serif',
-            fontSize: '18px',
-            color: '#000000'
-        }).setOrigin(0.5);
-
-        cancelBtn.on('pointerup', () => {
-            this.nameInput?.remove();
-            this.codeInput?.remove();
-            this.joinRoomDialog?.destroy();
-            cancelBtn.destroy();
-            cancelText.destroy();
-            blocker.destroy();
-        });
-    }
-
-    private confirmJoinRoom() {
-        const playerName = this.nameInput?.value.trim();
-        const roomCode = this.codeInput?.value.trim();
-    
-        if (!playerName || !roomCode) {
-            alert('Preencha seu nome e código da sala!');
-            return;
-        }
-
-        userService
-        .createUser(playerName);
-
-        roomService
-        .joinRoom(userService.getUser(), roomCode)
-        .then((res) => {
-            this.scene.start('WaitingRoom');
-        })
-
-    
-        this.nameInput?.remove();
-        this.codeInput?.remove();
-        this.joinRoomDialog?.destroy();
-    
     }
 
 }

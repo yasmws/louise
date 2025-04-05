@@ -74,7 +74,6 @@ export class CreateRoom extends Scene {
 
         this.selectRounds(this.selectedRounds);
 
-        // Botão "Criar Nome"
         this.nameButton = this.add.image(centerX, centerY + 140, 'header-button')
             .setScale(3)
             .setInteractive();
@@ -102,12 +101,10 @@ export class CreateRoom extends Scene {
             this.openNameDialog();
         });
 
-        // Caixa de loading (DialogBox1)
         this.loadingBox = this.add.image(centerX, centerY + 220, 'dialog-box')
             .setDisplaySize(300, 80)
             .setVisible(false);
 
-        // Texto de loading
         this.loadingText = this.add.text(centerX, centerY + 220, 'Criando sala...', {
             fontSize: '20px',
             color: '#ffffff',
@@ -225,14 +222,29 @@ export class CreateRoom extends Scene {
 
         roomService
         .createRoom(this.selectedRounds, userService.getUser(), this.roomName)
-        .then((res) => {
-            this.scene.start('WaitingRoom');
-
-          })
-          .catch((err) => {
-            alert('Erro ao criar sala: ' + err.message);
+        .subscribe({
+            next: (res) => {
+                this.scene.start('WaitingRoom');
+            },
+            error:(err) => {
+                alert('Erro ao criar sala: ' + err.message);
+                this.returnToStart();
+            } 
         });
     }
+
+    
+    returnToStart () {
+        this.loadingBox.setVisible(false);
+        this.loadingText.setVisible(false);
+    
+        this.nameButton.setVisible(true);
+        this.nameButtonText.setVisible(true);
+        this.roundButtons.forEach(btn => btn.setVisible(true));
+        this.roundTexts.forEach(txt => txt.setVisible(true));
+
+    }
+
 
     shutdown() {
         this.nameDialog?.destroy();
