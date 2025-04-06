@@ -295,9 +295,8 @@ export class Game extends Scene {
         }
     }    
 
-    // Check the puzzle solution
-    private checkPuzzleSolution(): void {    
-        // the correct char solution
+    private checkSuccess(): boolean {
+
         const correct = characters[this.currentChar] ? [...characters[this.currentChar]].sort() : [];
 
         // current board
@@ -305,9 +304,15 @@ export class Game extends Scene {
             .map((t, i) => (t.hasDot ? i : -1))
             .filter(i => i !== -1)
             .sort();
-        
+
+        return correct.length === current.length && correct.every((val, idx) => val === current[idx]);
+    }
+
+    // Check the puzzle solution
+    private checkPuzzleSolution(): void {    
+   
         // check if correct = current
-        const success = correct.length === current.length && correct.every((val, idx) => val === current[idx]);
+        const success = this.checkSuccess();
     
         // correct = current
         if (success) {
@@ -428,6 +433,60 @@ export class Game extends Scene {
 
     private finishPhase(): void
     {
-        this.gameOver();
+        const success = this.checkSuccess();
+        this.timerEvent.remove(false);
+        this.bgMusic.stop();
+        this.showRoundResult(success);
+
+
+
+        
+    }
+
+    private showRoundResult(success: boolean): void {
+        // Caixa branca com borda
+        const box = this.add.rectangle(512, 384, 520, 260, 0xffffff, 1)
+            .setStrokeStyle(4, 0xffffff)
+            .setDepth(101)
+            .setOrigin(0.5);
+    
+        // Título grande (Love Light)
+        const titleText = this.add.text(512, 320, success ? 'Você acertou!' : 'Você errou!', {
+            fontSize: '48px',
+            fontFamily: 'Love Light',
+            color: success ? '#000000' : '#ff0000',
+            align: 'center'
+        }).setOrigin(0.5).setDepth(101);
+    
+        // Subtexto (Jacques Francois)
+        const subText = this.add.text(512, 375,
+            success ? 'Você ganhou um ponto!' : 'O outro jogador ganhou um ponto!',
+            {
+                fontSize: '22px',
+                fontFamily: 'Jacques Francois',
+                color: '#333333',
+                align: 'center',
+                wordWrap: { width: 440 }
+            }
+        ).setOrigin(0.5).setDepth(101);
+    
+        // Botão "Ir para a próxima rodada"
+        const continueBtn = this.add.text(512, 435, 'Ir para a próxima rodada', {
+            fontSize: '22px',
+            fontFamily: 'Jacques Francois',
+            color: '#ffffff',
+            backgroundColor: '#6f4e37',
+            padding: { x: 20, y: 10 }
+        }).setOrigin(0.5)
+          .setInteractive({ useHandCursor: true })
+          .setDepth(101)
+          .on('pointerover', () => continueBtn.setStyle({ backgroundColor: '#8c6451' }))
+          .on('pointerout', () => continueBtn.setStyle({ backgroundColor: '#6f4e37' }))
+          .on('pointerdown', () => {
+              container.destroy();
+              this.scene.start('GameOver'); // ou próxima rodada
+          });
+    
+        const container = this.add.container(0, 0, [box, titleText, subText, continueBtn]);
     }
 }
