@@ -3,6 +3,12 @@ import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 import io from 'socket.io-client';
 import { WebSocketService, webSocketService } from '../../services/websocket';
+import { riddlesService } from '../../services/riddles';
+import { roundsService } from '../../services/rounds';
+import { brailleService } from '../../services/braille';
+import { Riddle } from '../../interfaces/riddle.interface';
+import { characters } from '../../helpers/caracteres';
+import { brailleMap } from '../../helpers/brailleMap';
 
 export class Game extends Scene {
 
@@ -36,19 +42,7 @@ export class Game extends Scene {
 
     private puzzleBoard: { id: number, hasDot: boolean }[] = [];
     private puzzleGroup!: Phaser.GameObjects.Container;
-    private characters: { [key: string]: number[] } = {
-        'A': [0], 'B': [0, 2], 'C': [0, 1], 'D': [0, 1, 3], 'E': [0, 3], 'F': [0, 1, 2], 'G': [0, 1, 2, 3],
-        'H': [0, 2, 3], 'I': [1, 2], 'J': [1, 2, 3], 'K': [0, 4], 'L': [0, 2, 4], 'M': [0, 1, 4], 'N': [0, 1, 3, 4],
-        'O': [0, 3, 4], 'P': [0, 1, 2, 4], 'Q': [0, 1, 2, 3, 4], 'R': [0, 2, 3, 4], 'S': [1, 2, 4], 'T': [1, 2, 3, 4],
-        'U': [0, 4, 5], 'V': [0, 2, 4, 5], 'W': [1, 2, 3, 5], 'X': [0, 1, 4, 5], 'Y': [0, 1, 3, 4, 5], 'Z': [0, 3, 4, 5]
-    };
-
-    private brailleMap: { [key: string]: string } = {
-        'A': '⠁', 'B': '⠃', 'C': '⠉', 'D': '⠙', 'E': '⠑', 'F': '⠋', 'G': '⠛', 'H': '⠓', 'I': '⠊', 'J': '⠚',
-        'K': '⠅', 'L': '⠇', 'M': '⠍', 'N': '⠝', 'O': '⠕', 'P': '⠏', 'Q': '⠟', 'R': '⠗', 'S': '⠎', 'T': '⠞',
-        'U': '⠥', 'V': '⠧', 'W': '⠺', 'X': '⠭', 'Y': '⠽', 'Z': '⠵', ' ': ' '
-    };
-
+  
     private minMoves: { [key: string]: number} = {
         'A': 9, 'B': 8, 'C': 13, 'D': 3, 'E': 11, 'F': 6, 'G': 10, 'H': 7, 'I': 10, 'J': 3, 'K': 7, 'L': 9, 'M': 5, 
         'N': 7, 'O': 7, 'P': 7, 'Q': 3, 'R': 3, 'S': 6, 'T': 3, 'U': 7, 'V': 2, 'W': 4, 'X': 5, 'Y': 1, 'Z': 1
@@ -74,113 +68,6 @@ export class Game extends Scene {
     private originalBrailleArray: string[] = [];
     private missingBraillePositions: { [key: string]: number } = {};
 
-    private clues = [
-        'Encontre o som que o silencio tenta esconder',
-        'Caminhe onde o vento leva sonhos perdidos',
-        'A verdade mora onde o medo nao entra',
-        'O tempo guarda segredos que a pressa nao ve',
-        'A sabedoria cresce no solo da escuta',
-        'A alma floresce na sombra do cuidado',
-        'Ouvir e a arte de tocar sem as maos',
-        'Quem espera com fe nunca esta sozinho',
-        'Veja com os olhos que o coracao desenha',
-        'Ha luz onde o olhar encontra calma',
-        'O amor vive onde o ego se cala',
-        'O vazio tambem ensina a ser inteiro',
-        'Siga onde a duvida ensina mais que a certeza',
-        'Busque o silencio onde as palavras pesam',
-        'A paz nasce onde o orgulho adormece',
-        'O sentido esta no passo e nao no fim',
-        'A estrada muda quando o olhar desperta',
-        'Escute o vento que fala sem voz',
-        'O bem floresce onde o outro tambem sorri',
-        'A alma ve o que os olhos ignoram',
-        'Toda sombra e convite para acender luz',
-        'O destino se revela no agora vivido',
-        'Quem aprende com dor carrega leveza',
-        'A verdade se esconde em gestos simples',
-        'Cure o mundo com o que te cura',
-        'A calma e a coragem disfarcada de silencio',
-        'Onde ha escuta nasce conexao sincera',
-        'A vida pulsa onde ha entrega real',
-        'Sinta onde a mente tenta entender',
-        'A beleza mora no detalhe esquecido',
-        'Toda espera carrega um tipo de fe',
-        'Ser leve tambem e forma de resistir',
-        'A humildade constrói pontes invisiveis',
-        'Quem se conhece nao teme escuridao',
-        'O amor verdadeiro nao precisa provar',
-        'O tempo traz o que o querer nao força',
-        'Viver e arte de cair com elegancia',
-        'A sabedoria fala baixo mas toca fundo',
-        'A coragem nem sempre grita alto',
-        'So enxerga claro quem aceita a neblina',
-        'A verdade pesa mas liberta os passos',
-        'A escuta transforma mais que o discurso',
-        'O presente e tudo que podemos moldar',
-        'Quem doa sem esperar ja recebe',
-        'A solidao pode ser fonte de encontro',
-        'A vida respira onde ha entrega',
-        'O caminho certo as vezes assusta',
-        'A alma leve dança mesmo sem musica',
-        'Ha luz em cada passo consciente',
-        'A cura comeca onde a culpa termina',
-        'Voce e aquilo que escolhe cultivar',
-        'A simplicidade guarda beleza profunda',
-        'Todo inicio e chance de recomeço',
-        'Quem ama cuida tambem com distancia',
-        'A verdade e filha do tempo vivido',
-        'A fe sustenta onde a logica falha',
-        'O coracao guia quando o mapa some',
-        'Sinta o que a pressa te fez esquecer',
-        'Seja raiz onde falta firmeza',
-        'O silencio da alma e sagrado',
-        'Cada erro e convite para clareza',
-        'A escuta e presente raro e valioso',
-        'A sombra e parte do desenho inteiro',
-        'Quem observa aprende sem falar nada',
-        'O cuidado muda tudo sem fazer barulho',
-        'A entrega revela o que o medo esconde',
-        'Ser e mais do que parecer certo',
-        'Ha sabedoria em aceitar o nao saber',
-        'A liberdade comeca na mente serena',
-        'Todo gesto sincero deixa rastro eterno',
-        'A esperanca nasce do simples respiro',
-        'A brisa leve traz verdades profundas',
-        'O agora guarda todos os caminhos',
-        'Quem sente entende sem explicacao',
-        'A alma cansada pede escuta gentil',
-        'Toda despedida carrega renascimento',
-        'O destino e moldado por pequenas escolhas',
-        'A beleza brota onde ha cuidado',
-        'Ser gentil e um ato de coragem',
-        'A vida pede mais toque que palavra',
-        'So ha verdade onde ha vulnerabilidade',
-        'O silencio ilumina o que o ruido esconde',
-        'Todo gesto de amor e revolucao',
-        'A fe e o farol na noite escura',
-        'Seja paz onde o caos quer vencer',
-        'A alma encontra sentido no caminho',
-        'O chao firme nasce de dentro',
-        'Ser inteiro e aceitar todas as partes',
-        'A vida acontece onde ha presenca',
-        'A brisa leve tambem move montanhas',
-        'Quem respeita o tempo planta flores',
-        'A escuta e semente de empatia',
-        'A serenidade e a força que acolhe',
-        'Toda escolha e um tipo de arte',
-        'A humildade ensina mais que o saber',
-        'A cura e um sim repetido ao coracao',
-        'So e livre quem se perdoa primeiro',
-        'Toda sombra pede um novo olhar',
-        'A espera pode ser caminho tambem',
-        'O simples guarda o que e essencial',
-        'Quem sente profundamente toca o eterno',
-        'A luz mora onde ha compaixao',
-        'Aceitar tambem e forma de amar',
-        'A gratidao transforma a percepcao do mundo',
-      ];
-      
     private chosenClue: string = '';
     private brailleTranslation: string = '';
 
@@ -191,10 +78,8 @@ export class Game extends Scene {
 
     constructor() {
         super('Game');
-
-        this.initSocket()
+        this.initSocket();
     }
-
 
     initSocket() {
         this.socket = webSocketService;
@@ -265,23 +150,27 @@ export class Game extends Scene {
         this.updateProgressBarReverse(this.player2Progress, 774, 60, this.player2ProgressValue);
 
 
-
+ 
         this.tryAgainText = this.add.text(512, 290, 'Try again!', {
             fontSize: '24px',
             color: '#ff0000'
         }).setOrigin(0.5).setVisible(false).setDepth(10); // Make sure it's higher than the image's depth
         ;
-        
 
+        const riddle = riddlesService.getCurrentRiddle(
+            roundsService.currentRound
+        )
 
+        if(!riddle) {
+            throw new Error('Riddle not found');
+        }
 
-
-        this.chosenClue = this.clues[Math.floor(Math.random() * this.clues.length)];
+        this.chosenClue = riddle.text;
     
-        this.generateCharSequence();
+        //this.generateCharSequence();
    
         // Generate Braille translation, removing spaces and line breaks
-        this.brailleTranslation = this.translateToBraille(this.chosenClue);
+        this.brailleTranslation = this.translateToBraille(riddle);
     
         // Render images first to set up the layout
         this.boxClueText = this.add.image(200, 330, 'Menu1').setDisplaySize(303.8, 308.7).setOrigin(0.5);
@@ -303,7 +192,7 @@ export class Game extends Scene {
         })
         .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.checkPuzzleSolution());
 
-        this.finishPhaseBtn = this.add.text(512, 610, 'Finalizar Fase', {
+        this.finishPhaseBtn = this.add.text(512, 610, 'Finalizar Rodada', {
             fontFamily: 'Arial', fontSize: '28px', color: '#ffffff', backgroundColor: '#6f4e37', padding: { x: 10, y: 5 }
         })
         .setOrigin(0.5).setInteractive({ useHandCursor: true })
@@ -314,68 +203,17 @@ export class Game extends Scene {
     }
 
     // makes the text translation to braille, keeping an original array and creating an empty slots one
-    private translateToBraille(text: string): string {
-        const uppercaseText = text.toUpperCase();
-        this.originalBrailleArray = uppercaseText.split('').map(char => this.brailleMap[char] || char);
-        this.brailleArray = [...this.originalBrailleArray];
-        this.missingBraillePositions = {};
-    
-        let charOccurrences: { [key: string]: number[] } = {};
-    
-        for (let i = 0; i < this.brailleArray.length; i++) {
-            const originalChar = uppercaseText[i];
-            if (this.charSequence.includes(originalChar) && originalChar !== ' ') { 
-                if (!charOccurrences[originalChar]) {
-                    charOccurrences[originalChar] = [];
-                }
-                charOccurrences[originalChar].push(i);
-            }
-        }
-    
-        let removalList: { char: string, position: number }[] = [];
-    
-        // Select **one** occurrence per character and track position
-        for (const char of this.charSequence) {
-            if (charOccurrences[char] && charOccurrences[char].length > 0) {
-                const randomIndex = Math.floor(Math.random() * charOccurrences[char].length);
-                const position = charOccurrences[char][randomIndex];
-    
-                this.brailleArray[position] = '_';  // Hide character in Braille
-                this.missingBraillePositions[char] = position; // Track missing character position
-                removalList.push({ char, position });
-            }
-        }
-    
-        removalList.sort((a, b) => a.position - b.position);
-        this.puzzleSequence = removalList.map(item => item.char);
+    private translateToBraille(riddle: Riddle): string {
+
+        this.originalBrailleArray = brailleService.translate(riddle.text);
+        this.brailleArray = brailleService.translate(riddle.riddle_easy);  
+
+        this.puzzleSequence = riddle.riddle_easy
+        .split('')
+        .map((char, index) => char === '_' ? riddle.text[index].toUpperCase() : null)
+        .filter((char): char is string => char !== null);
     
         return this.brailleArray.join('');
-    }
-    
-    
-    // renders the clue and array of chars
-    private generateCharSequence(): void {
-        const charMap: { [key: string]: number } = {};
-    
-        // Convert to uppercase and keep spaces in the text
-        const cleanedSentence = this.chosenClue.toUpperCase();
-    
-        // Count occurrences of each character **ignoring spaces**
-        for (const char of cleanedSentence) {
-            if (char !== ' ') {
-                charMap[char] = (charMap[char] || 0) + 1;
-            }
-        }
-    
-        // Create an array of characters that appear more than once
-        let possibleReplacements: string[] = [];
-        for (const [char, count] of Object.entries(charMap)) {
-            if (count > 1) {
-                possibleReplacements.push(char);
-            }
-        }
-    
-        this.charSequence = this.shuffleArray(possibleReplacements).slice(0, Math.min(6, possibleReplacements.length));
     }
     
     // sentence text space
@@ -389,7 +227,6 @@ export class Game extends Scene {
         }).setOrigin(0.5);
     }   
     
-
     // braille text space
     private renderBrailleTranslation(): void {
         const startX = 755, startY = 250, charWidth = 25, charHeight = 40;
@@ -436,16 +273,10 @@ export class Game extends Scene {
     // Loads the puzzle board for the current CHAR
     private initializePuzzleBoard(): void {
         this.moveCount = 0;
-        const dots = this.boardSelectionPuzzle(this.characters[this.currentChar].length);
+        console.log('Current char:', this.currentChar);     
+        console.log('Current char index:', characters[this.currentChar].length);
+        const dots = this.boardSelectionPuzzle(characters[this.currentChar].length);
         this.puzzleBoard = Array.from({ length: 6 }, (_, index) => ({ id: index, hasDot: dots.includes(index) }));
-    }
-
-    private shuffleArray(array: string[]): string[] {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
     }
 
     // Array of valid moves and calculation of movements made by the player in each CHAR
@@ -467,7 +298,7 @@ export class Game extends Scene {
     // Check the puzzle solution
     private checkPuzzleSolution(): void {    
         // the correct char solution
-        const correct = this.characters[this.currentChar] ? [...this.characters[this.currentChar]].sort() : [];
+        const correct = characters[this.currentChar] ? [...characters[this.currentChar]].sort() : [];
 
         // current board
         const current = this.puzzleBoard
@@ -485,7 +316,7 @@ export class Game extends Scene {
     
             // remakes the braille array to fill the current empty char
             for (let i = 0; i < this.brailleArray.length; i++) {
-                if (this.brailleArray[i] === '_' && this.originalBrailleArray[i] === this.brailleMap[this.currentChar]) {
+                if (this.brailleArray[i] === '_' && this.originalBrailleArray[i] === brailleMap[this.currentChar]) {
                     this.brailleArray[i] = this.originalBrailleArray[i];
                     this.brailleTranslation = this.brailleArray.join('');
                     break;
@@ -533,7 +364,7 @@ export class Game extends Scene {
 
     private startTimer(): void
     {
-        this.timeLeft = 180;
+        this.timeLeft = 120;
         this.timerEvent = this.time.addEvent({
             delay: 1000,
             callback: () => {

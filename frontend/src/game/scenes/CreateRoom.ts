@@ -2,6 +2,7 @@ import { Scene, GameObjects } from 'phaser';
 import { webSocketService, WebSocketService } from '../../services/websocket';
 import { userService } from '../../services/user';
 import { roomService } from '../../services/room';
+import { roundsService } from '../../services/rounds';
 
 export class CreateRoom extends Scene {
     private createRoomButton: GameObjects.Image;
@@ -222,6 +223,7 @@ export class CreateRoom extends Scene {
         .createRoom(this.selectedRounds, userService.getUser(), this.roomName)
         .subscribe({
             next: (res) => {
+                roundsService.rounds = res.rounds;
                 this.scene.start('WaitingRoom');
             },
             error:(err) => {

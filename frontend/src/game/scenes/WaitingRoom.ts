@@ -2,6 +2,8 @@ import { Scene } from 'phaser';
 import { roomService } from '../../services/room';
 import { webSocketService } from '../../services/websocket';
 import { userService } from '../../services/user';
+import { roundsService } from '../../services/rounds';
+import { riddlesService } from '../../services/riddles';
 
 export class WaitingRoom extends Scene {
   private countdownText!: Phaser.GameObjects.Text;
@@ -83,10 +85,12 @@ export class WaitingRoom extends Scene {
     webSocketService
     .on('player-joined')
     .subscribe({
-        next: result => {
+        next: (result: any) => {
+            console.log('result player-joined', result);
             player2Text.setText(`Jogador 2: ${result[1]}`);
-            roomService.setAdversary(result[1]);
-
+            roomService.setAdversary(result.players[1].name);
+            riddlesService.riddles = result.riddles;
+            
             this.time.delayedCall(1000, () => {
               this.startGame();
             }, [], this);
@@ -103,8 +107,8 @@ export class WaitingRoom extends Scene {
 
     webSocketService
     .emit('start', (response: any) => {
-      console.log("response start", response);
       this.startCountdown();
+
     })
 
     // webSocketService
