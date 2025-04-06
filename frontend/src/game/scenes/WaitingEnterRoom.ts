@@ -9,10 +9,13 @@ export class WaitingEnterRoom extends Scene {
   private playerBoxes: Phaser.GameObjects.Image[] = [];
 
   constructor() {
-    super('WaitingEnterRoom');
+    super('WaitingEnterRoom'); 
   }
+    
 
   create() {
+    this.startGame();
+  
     const centerX = this.cameras.main.width / 2;
     const centerY = this.cameras.main.height / 2;
 
@@ -80,18 +83,22 @@ export class WaitingEnterRoom extends Scene {
       color: '#ffffff'
     }).setOrigin(0.5);
 
-    // webSocketService
-    // .on('player-joined')
-    // .subscribe({
-    //     next: result => {
-    //         player2Text.setText(`Jogador 2: ${result[1]}`);
-    //         roomService.setAdversary(result[1]);
-    //         this.startCountdown();
-    //     },
-    //     error: error => {
-    //         alert(error.message)
-    //     }
-    // })
+  }
+
+  private startGame() {
+    console.log('definiu evento')
+    webSocketService
+    .on("propagate-start")
+    .subscribe({
+        next: result => {
+          //this.scene.start('Game');
+          this.startCountdown();
+        },
+        error: error => {
+            alert(error.message)
+        }
+    })
+    
   }
 
   private startCountdown() {

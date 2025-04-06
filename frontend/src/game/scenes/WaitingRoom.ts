@@ -86,12 +86,38 @@ export class WaitingRoom extends Scene {
         next: result => {
             player2Text.setText(`Jogador 2: ${result[1]}`);
             roomService.setAdversary(result[1]);
-            this.startCountdown();
+
+            this.time.delayedCall(1000, () => {
+              this.startGame();
+            }, [], this);
+            
+            
         },
         error: error => {
             alert(error.message)
         }
     })
+  }
+
+  private startGame() {
+
+    webSocketService
+    .emit('start', (response: any) => {
+      console.log("response start", response);
+      this.startCountdown();
+    })
+
+    // webSocketService
+    // .on("propagate-start")
+    // .subscribe({
+    //     next: result => {
+    //        this.startCountdown();
+    //     },
+    //     error: error => {
+    //         alert(error.message)
+    //     }
+    // })
+    
   }
 
   private startCountdown() {

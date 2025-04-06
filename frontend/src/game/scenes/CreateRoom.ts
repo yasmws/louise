@@ -1,6 +1,5 @@
 import { Scene, GameObjects } from 'phaser';
 import { webSocketService, WebSocketService } from '../../services/websocket';
-import { User } from '../../interfaces/user.interface';
 import { userService } from '../../services/user';
 import { roomService } from '../../services/room';
 
@@ -159,13 +158,12 @@ export class CreateRoom extends Scene {
             box, title, confirmBtn, confirmText
         ]);
     
-        // Criação dos inputs HTML
         const canvasRect = this.game.canvas.getBoundingClientRect();
-    
-        this.roomInput = document.createElement('input');
-        this.roomInput.type = 'text';
-        this.roomInput.placeholder = 'Nome da sala';
-        Object.assign(this.roomInput.style, {
+
+        this.nameInput = document.createElement('input');
+        this.nameInput.type = 'text';
+        this.nameInput.placeholder = 'Seu nome';
+        Object.assign(this.nameInput.style, {
             position: 'fixed',
             left: `${canvasRect.left + centerX - 125}px`,
             top: `${canvasRect.top + centerY - 50}px`,
@@ -177,12 +175,12 @@ export class CreateRoom extends Scene {
             textAlign: 'center',
             zIndex: '1000',
         });
-        document.body.appendChild(this.roomInput);
+        document.body.appendChild(this.nameInput);
     
-        this.nameInput = document.createElement('input');
-        this.nameInput.type = 'text';
-        this.nameInput.placeholder = 'Seu nome';
-        Object.assign(this.nameInput.style, {
+        this.roomInput = document.createElement('input');
+        this.roomInput.type = 'text';
+        this.roomInput.placeholder = 'Codigo da sala';
+        Object.assign(this.roomInput.style, {
             position: 'fixed',
             left: `${canvasRect.left + centerX - 125}px`,
             top: `${canvasRect.top + centerY + 10}px`,
@@ -194,7 +192,7 @@ export class CreateRoom extends Scene {
             textAlign: 'center',
             zIndex: '1000',
         });
-        document.body.appendChild(this.nameInput);
+        document.body.appendChild(this.roomInput);
     }
 
     private confirmRoomName() {
