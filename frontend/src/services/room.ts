@@ -2,6 +2,8 @@ import { Observable, throwError } from 'rxjs';
 import { Room } from "../interfaces/room.interface";
 import { User } from "../interfaces/user.interface";
 import { webSocketService } from "./websocket";
+import { roundsService } from './rounds';
+import { riddlesService } from './riddles';
 
 export class room {
   private room?: Room;
@@ -21,6 +23,8 @@ export class room {
           return;
         }
 
+        roundsService.rounds = steps;
+
         this.room = new Room(response);
         subscriber.next(response);
         subscriber.complete();
@@ -30,8 +34,9 @@ export class room {
 
   public joinRoom(user: User, name: string): Observable<any> {
     return new Observable(subscriber => {
-      webSocketService.emit('join-room', name, user.name, (response: string | string[]) => {
+      webSocketService.emit('join-room', name, user.name, (...args: any) => {
 
+        const response = args[0];
         if (typeof response === 'string') {
 
           if (response === 'room already exists') {
@@ -47,7 +52,9 @@ export class room {
         }  
 
         this.room = new Room(name);
-        this.room.adversary = response[0];
+        this.room.adversary = response.players[1].name;
+        roundsService.rounds = response.steps;
+        riddlesService.riddles = response.riddles;
 
         subscriber.next(response);
         subscriber.complete();
