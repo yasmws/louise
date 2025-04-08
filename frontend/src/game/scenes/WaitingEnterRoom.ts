@@ -14,6 +14,10 @@ export class WaitingEnterRoom extends Scene {
   }
     
 
+  preload() {
+    this.load.image('header-button', 'assets/algum-path/header-button.png');
+  }
+
   create() {
     this.startGame();
   
@@ -88,16 +92,11 @@ export class WaitingEnterRoom extends Scene {
 
   private startGame() {
     webSocketService
-    .on("propagate-start")
-    .subscribe({
-        next: result => {
-          //this.scene.start('Game');
-          this.startCountdown();
-        },
-        error: error => {
-            alert(error.message)
-        }
+    .listenOnce("propagate-start", () => {
+      this.startCountdown();
+
     })
+    
     
   }
 

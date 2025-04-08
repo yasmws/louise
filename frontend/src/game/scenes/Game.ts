@@ -43,6 +43,7 @@ export class Game extends Scene {
     boxBraille!: Phaser.GameObjects.Image;
     bgMusic!: Phaser.Sound.BaseSound;
     private resultPopupContainer?: Phaser.GameObjects.Container;
+    private gameOverTriggered = false
 
     private puzzleBoard: { id: number, hasDot: boolean }[] = [];
     private puzzleGroup!: Phaser.GameObjects.Container;
@@ -93,18 +94,18 @@ export class Game extends Scene {
 
     // DESIGN
     preload() {
-        this.load.audio('backgroundMusic', 'assets/audio/background.m4a');
-        this.load.image('background', 'assets/background.png');
-        this.load.image('dotsPuzzle', 'assets/dotsPuzzle.png');
-        this.load.image('header1', 'assets/Header1.png');
-        this.load.image('header2', 'assets/Header2.png');
-        this.load.image('Behind', 'assets/Behind 1.png');
-        this.load.image('Menu3CategF', 'assets/Menu3CategoriesFront.png');
-        this.load.image('Menu3CategB', 'assets/Menu3CategoriesBehind.png');
-        this.load.image('Menu2', 'assets/Menu2.png');
-        this.load.image('Menu1', 'assets/Menu1.png');
-        this.load.font('Jacques Francois', 'assets/fonts/JacquesFrancois-Regular.ttf');
-        this.load.font('Love Light', 'assets/fonts/LoveLight-Regular.ttf');
+        // this.load.audio('backgroundMusic', 'assets/audio/background.m4a');
+        // this.load.image('background', 'assets/background.png');
+        // this.load.image('dotsPuzzle', 'assets/dotsPuzzle.png');
+        // this.load.image('header1', 'assets/Header1.png');
+        // this.load.image('header2', 'assets/Header2.png');
+        // this.load.image('Behind', 'assets/Behind 1.png');
+        // this.load.image('Menu3CategF', 'assets/Menu3CategoriesFront.png');
+        // this.load.image('Menu3CategB', 'assets/Menu3CategoriesBehind.png');
+        // this.load.image('Menu2', 'assets/Menu2.png');
+        // this.load.image('Menu1', 'assets/Menu1.png');
+        // this.load.font('Jacques Francois', 'assets/fonts/JacquesFrancois-Regular.ttf');
+        // this.load.font('Love Light', 'assets/fonts/LoveLight-Regular.ttf');
     }
 
     create() {
@@ -171,7 +172,7 @@ export class Game extends Scene {
         ;
 
         const riddle = riddlesService.getCurrentRiddle(
-            roundsService.currentRound
+            roundsService.currentRound - 1
         )
 
         if(!riddle) {
@@ -201,21 +202,19 @@ export class Game extends Scene {
 
         EventBus.emit('current-scene-ready', this);
 
-        this.propagateStopSub = webSocketService
-        .on('propagate-stop')
-        .subscribe({
-            next: (result: any) => {
+        webSocketService.listenOnce('propagate-stop', (result: any) => {
+            this.showMatchResultPopup(this.points, result);
+        });
 
-                if(this.timeLeft < 40) {
-                    this.showMatchResultPopup(this.points, result);
+        this.gameOverTriggered = false
 
-                }
-                
-            },
-            error: error => {
-                alert(error.message)
-            }
-        })
+        webSocketService.listenOnce('propagate-continue', (result: any) => {
+            console.log('propagate-continue');
+            console.log( 'já foi chamado', this.gameOverTriggered)
+            
+            this.gameover()
+            this.gameOverTriggered = true;
+        });
 
     }
 
@@ -515,29 +514,6 @@ export class Game extends Scene {
     }
 
     private showMatchResultPopup(userPoints: number, adversaryPoints: number): void {
-
-        // webSocketService
-        // .on("propagate-start")
-        // .subscribe({
-        //     next: result => {
-        //         if(roundsService.isLastRound()) {
-        //             this.scene.start('GameOver');
-        //         } else {
-        //             roundsService.incrementRound();
-
-        //             this.scene.restart();
-
-        //             if(roomService.created) {
-        //                 this.scene.start('WaitingRoom');
-        //             } else {
-        //                 this.scene.start('WaitingEnterRoom');
-        //             }
-        //         }
-        //     },
-        //     error: error => {
-        //         alert(error.message)
-        //     }
-        // })
    
         let title = '';
         let subtitle = '';
@@ -595,38 +571,50 @@ export class Game extends Scene {
           .on('pointerover', () => continueBtn.setStyle({ backgroundColor: '#8c6451' }))
           .on('pointerout', () => continueBtn.setStyle({ backgroundColor: '#6f4e37' }))
           .on('pointerdown', () => {
-            
-            if (this.resultPopupContainer) {
-                this.resultPopupContainer.setVisible(false);
-                this.resultPopupContainer.destroy(true);
-                this.resultPopupContainer = undefined;
-            }
-            
-            if(roundsService.isLastRound()) {
+            webSocketService.emit('continue', () => {
+                console.log('emitiu continue');
+            });
 
-                setTimeout(() => {
-                    this.scene.start('GameOver');
-                }, 200)
-
-            } else {
-                roundsService.incrementRound();
-
-                this.propagateStopSub?.unsubscribe();
-                this.scene.stop('Game');
-
-                setTimeout(() => {
-                    if(roomService.created) {
-                        this.scene.start('WaitingRoom');
-                    } else {
-                        this.scene.start('WaitingEnterRoom');
-                    }
-    
-                }, 200)
-
-            }
-        });
+            this.gameover()
+          } );
     
         this.resultPopupContainer.add([box, titleText, subText, continueBtn]);
+    }
+
+    private gameover = () => {
+
+        if (this.gameOverTriggered) return;
+            
+        if (this.resultPopupContainer) {
+            this.resultPopupContainer.setVisible(false);
+            this.resultPopupContainer.destroy(true);
+            this.resultPopupContainer = undefined;
+        }
+        
+        if(roundsService.isLastRound()) {
+
+            this.scene.stop('Game');
+
+            setTimeout(() => {
+
+                this.scene.start('GameOver');
+            }, 200)
+
+        } else {
+            roundsService.incrementRound();
+
+            this.scene.stop('Game');
+
+            setTimeout(() => {
+                if(roomService.created) {
+                    this.scene.start('WaitingRoom');
+                } else {
+                    this.scene.start('WaitingEnterRoom');
+                }
+
+            }, 200)
+
+        }
     }
 
 }

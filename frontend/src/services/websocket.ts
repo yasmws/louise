@@ -91,5 +91,23 @@ export class WebSocketService {
   public getSocketId(): string | undefined {
     return this.socket?.id;
   }
+
+  public listenOnce<T = any>(event: string, callback: (data: T) => void): () => void {
+    if (!this.socket) {
+      console.warn('[Socket.IO] Socket não conectado. Evento ignorado:', event);
+      return () => {};
+    }
+  
+    const handler = (data: T) => {
+      callback(data);
+    };
+  
+    this.socket.on(event, handler);
+  
+    // Retorna função para remover o ouvinte se necessário
+    return () => {
+      this.socket?.off(event, handler);
+    };
+  }
 }
 export const webSocketService = new WebSocketService();

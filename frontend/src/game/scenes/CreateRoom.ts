@@ -223,7 +223,7 @@ export class CreateRoom extends Scene {
         .createRoom(this.selectedRounds, userService.getUser(), this.roomName)
         .subscribe({
             next: (res) => {
-                roundsService.rounds = res.rounds;
+                roundsService.rounds = this.selectedRounds;
                 this.scene.start('WaitingRoom');
             },
             error:(err) => {

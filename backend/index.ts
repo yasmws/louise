@@ -63,6 +63,20 @@ socketio.on("connection", (socket) => {
         }
     });
 
+    socket.on("continue",  (cb) => {
+        try {
+            const room = roomsService.getRoomsByUserId(socket.id);
+            if (room) {
+                const user = room.findPlayerById(socket.id);
+                
+                socket.to(room.name).emit("propagate-continue");
+                cb(room);
+            }
+        } catch (error) {
+            cb(error);
+        }
+    });
+
     // Create a new room
     socket.on("create-room", (roomName, userName, steps, cb) => {
         try {
