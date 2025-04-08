@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Hello world</title>
+    </head>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <body>
+        <!-- <div id="messagers">
+      <span>Mensagens</span>
+    </div>
+
+    <input type="text" id="message" placeholder="Digite sua mensagem" />
+    <button id="send">Enviar</button> -->
+        <div>
+            <label for="say">roomName</label>
+            <input name="roomName" id="room" value="amigos" />
+        </div>
+        <div>
+            <label for="to">user.name</label>
+            <input name="userName" id="user" value="Arthur" />
+        </div>
+        <div>
+            <button onclick="handleCreate()">Create room</button>
+        </div>
+        <div>
+            <button onclick="handleJoin()">Join room</button>
+        </div>
+        <div>
+            <button onclick="handleStart()">Start room</button>
+        </div>
+        <button onclick="handleStop()">STOP!!</button>
+    </body>
+
+    <script>
+        let socket = io();
+
+        const handleStart = (e) => {
+            socket.emit("start", function (response) {
+                console.log(response);
+            });
+        };
+
+        const handleCreate = (e) => {
+            const roomValue = document.getElementById("room").value;
+            const userValue = document.getElementById("user").value;
+            socket.emit(
+                "create-room",
+                roomValue,
+                userValue,
+                3,
+                function (response) {
+                    console.log(response);
+                }
+            );
+
+            console.log("request-sent");
+        };
+
+        const handleJoin = (e) => {
+            const roomValue = document.getElementById("room").value;
+            const userValue = document.getElementById("user").value;
+            socket.emit("join-room", roomValue, userValue, function (response) {
+                console.log(response);
+            });
+
+            console.log("request-sent");
+        };
+
+        socket.on("connect", () => {
+            console.log("Connected to server");
+        });
+
+        socket.on("propagate-stop", (message) => {
+            console.log(message);
+        });
+
+        socket.on("propagate-start", (message) => {
+            console.log(message);
+        });
+
+        socket.on("room-update", (message) => {
+            console.log(message);
+        });
+
+        const handleStop = () => {
+            socket.emit("stop", (message) => {
+                console.log(message);
+            });
+        };
+    </script>
+</html>
