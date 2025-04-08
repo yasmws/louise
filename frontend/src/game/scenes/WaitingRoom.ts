@@ -4,6 +4,7 @@ import { webSocketService } from '../../services/websocket';
 import { userService } from '../../services/user';
 import { roundsService } from '../../services/rounds';
 import { riddlesService } from '../../services/riddles';
+import { Game } from './Game';
 
 export class WaitingRoom extends Scene {
   private countdownText!: Phaser.GameObjects.Text;
@@ -139,7 +140,7 @@ export class WaitingRoom extends Scene {
 
     const next = () => {
       if (index >= countdownNumbers.length) {
-        this.scene.get('Game').scene.restart();
+        
         this.scene.start('Game');
         return;
       }

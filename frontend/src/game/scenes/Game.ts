@@ -11,6 +11,7 @@ import { characters } from '../../helpers/caracteres';
 import { brailleMap } from '../../helpers/brailleMap';
 import { roomService } from '../../services/room';
 import { userService } from '../../services/user';
+import { Subscription } from 'rxjs';
 
 export class Game extends Scene {
 
@@ -41,6 +42,7 @@ export class Game extends Scene {
     boxPuzzle!: Phaser.GameObjects.Image;
     boxBraille!: Phaser.GameObjects.Image;
     bgMusic!: Phaser.Sound.BaseSound;
+    private resultPopupContainer?: Phaser.GameObjects.Container;
 
     private puzzleBoard: { id: number, hasDot: boolean }[] = [];
     private puzzleGroup!: Phaser.GameObjects.Container;
@@ -76,8 +78,7 @@ export class Game extends Scene {
     private tryAgainText!: Phaser.GameObjects.Text;
     private clueTextGroup!: Phaser.GameObjects.Container;
     private socket: WebSocketService;
-
-    private userRoundPoints: number = 0;
+    private propagateStopSub?: Subscription; 
 
 
     constructor() {
@@ -107,6 +108,22 @@ export class Game extends Scene {
     }
 
     create() {
+
+        console.log('entrou aqui')
+
+        this.events.once('destroy', () => {
+            this.propagateStopSub?.unsubscribe();
+          });
+
+        this.points = 0;
+        this.timeLeft = 60;
+
+
+        if (this.resultPopupContainer) {
+            this.resultPopupContainer.destroy(true);
+            this.resultPopupContainer = undefined;
+        }
+
         this.background = this.add.image(512, 384, 'background');
         this.bgMusic = this.sound.add('backgroundMusic', { loop: true, volume: 0.1 });
         this.bgMusic.play();
@@ -184,14 +201,15 @@ export class Game extends Scene {
 
         EventBus.emit('current-scene-ready', this);
 
-        webSocketService
+        this.propagateStopSub = webSocketService
         .on('propagate-stop')
         .subscribe({
             next: (result: any) => {
 
-                console.log("propagate-stop", result);
+                if(this.timeLeft < 40) {
+                    this.showMatchResultPopup(this.points, result);
 
-                this.showMatchResultPopup(this.points, result);
+                }
                 
             },
             error: error => {
@@ -272,7 +290,6 @@ export class Game extends Scene {
                 // Check if this letter is the current puzzle character (direct position comparison)
                 const isCurrentPuzzleLetter = charIndex === currentCharPosition;
                 
-                console.log(isCurrentPuzzleLetter);
                 // Create text object for this letter with appropriate color
                 const letterText = this.add.text(x, y, letter, {
                     color: isCurrentPuzzleLetter ? '#FF0000' : '#000000', // Orange highlight or black
@@ -431,7 +448,7 @@ export class Game extends Scene {
                 // PUXAR CODIGO DE FIM DE JOGO
                 this.checkSolutionBtn.setText('Complete!');
                 this.checkSolutionBtn.disableInteractive();
-                this.finishPhase();
+            
             }
         // wrong solution, try again text is displayed
         } else {
@@ -458,7 +475,7 @@ export class Game extends Scene {
     {
         this.timeLeft = 120;
         this.timerEvent = this.time.addEvent({
-            delay: 1000,
+            delay: 100,
             callback: () => {
                 this.timeLeft--;
                 if (this.timeLeft < 0) {
@@ -485,13 +502,6 @@ export class Game extends Scene {
     override update () {
         // Simulação de progresso dos jogadores
       
-    }
-
-    private gameOver(): void
-    {
-        this.timerEvent.remove(false);
-        this.bgMusic.stop();
-        this.scene.start('GameOver');
     }
 
     private finishPhase(): void
@@ -550,7 +560,7 @@ export class Game extends Scene {
             color = '#444444'; // cinza
         }
     
-        const container = this.add.container(0, 0);
+        this.resultPopupContainer = this.add.container(0, 0);
     
         const box = this.add.rectangle(512, 384, 580, 280, 0xffffff, 1)
             .setStrokeStyle(4, 0xffffff)
@@ -585,24 +595,38 @@ export class Game extends Scene {
           .on('pointerover', () => continueBtn.setStyle({ backgroundColor: '#8c6451' }))
           .on('pointerout', () => continueBtn.setStyle({ backgroundColor: '#6f4e37' }))
           .on('pointerdown', () => {
-              container.destroy();
             
-                if(roundsService.isLastRound()) {
+            if (this.resultPopupContainer) {
+                this.resultPopupContainer.setVisible(false);
+                this.resultPopupContainer.destroy(true);
+                this.resultPopupContainer = undefined;
+            }
+            
+            if(roundsService.isLastRound()) {
+
+                setTimeout(() => {
                     this.scene.start('GameOver');
-                } else {
-                    roundsService.incrementRound();
+                }, 200)
 
-                    this.scene.stop();
+            } else {
+                roundsService.incrementRound();
 
+                this.propagateStopSub?.unsubscribe();
+                this.scene.stop('Game');
+
+                setTimeout(() => {
                     if(roomService.created) {
                         this.scene.start('WaitingRoom');
                     } else {
                         this.scene.start('WaitingEnterRoom');
                     }
-                }
-
-          });
     
-        container.add([box, titleText, subText, continueBtn]);
+                }, 200)
+
+            }
+        });
+    
+        this.resultPopupContainer.add([box, titleText, subText, continueBtn]);
     }
+
 }
