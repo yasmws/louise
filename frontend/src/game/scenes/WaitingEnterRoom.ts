@@ -86,7 +86,6 @@ export class WaitingEnterRoom extends Scene {
   }
 
   private startGame() {
-    console.log('definiu evento')
     webSocketService
     .on("propagate-start")
     .subscribe({
