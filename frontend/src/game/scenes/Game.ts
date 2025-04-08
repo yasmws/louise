@@ -9,6 +9,8 @@ import { brailleService } from '../../services/braille';
 import { Riddle } from '../../interfaces/riddle.interface';
 import { characters } from '../../helpers/caracteres';
 import { brailleMap } from '../../helpers/brailleMap';
+import { roomService } from '../../services/room';
+import { userService } from '../../services/user';
 
 export class Game extends Scene {
 
@@ -74,6 +76,8 @@ export class Game extends Scene {
     private tryAgainText!: Phaser.GameObjects.Text;
     private clueTextGroup!: Phaser.GameObjects.Container;
     private socket: WebSocketService;
+
+    private userRoundPoints: number = 0;
 
 
     constructor() {
@@ -141,14 +145,6 @@ export class Game extends Scene {
         this.player2Text = this.add.text(924, 30, 'Jogador 2', {
             fontFamily: 'Jacques Francois', fontSize: '20px', color: '#000000' }).setOrigin(0.5);
 
-        this.boxProgress1 = this.add.image(174, 65, 'Behind').setDisplaySize(300, 50).setOrigin(0.5);
-        this.player1Progress = this.add.graphics();
-        this.updateProgressBar(this.player1Progress, 174, 80, this.player1ProgressValue);
-
-        this.boxProgress2 = this.add.image(874, 65, 'Behind').setDisplaySize(300, 50).setOrigin(0.5);
-        this.player2Progress = this.add.graphics();
-        this.updateProgressBarReverse(this.player2Progress, 774, 60, this.player2ProgressValue);
-
 
  
         this.tryAgainText = this.add.text(512, 290, 'Try again!', {
@@ -186,19 +182,22 @@ export class Game extends Scene {
         this.initializePuzzleBoard();
         this.renderPuzzleBoard();
 
-        
-        this.checkSolutionBtn = this.add.text(512, 550, 'Check Solution', {
-            fontFamily: 'Arial', fontSize: '28px', color: '#ffffff', backgroundColor: '#6f4e37', padding: { x: 10, y: 5 }
-        })
-        .setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.checkPuzzleSolution());
-
-        this.finishPhaseBtn = this.add.text(512, 610, 'Finalizar Rodada', {
-            fontFamily: 'Arial', fontSize: '28px', color: '#ffffff', backgroundColor: '#6f4e37', padding: { x: 10, y: 5 }
-        })
-        .setOrigin(0.5).setInteractive({ useHandCursor: true })
-        .on('pointerdown', () => this.finishPhase());
-
         EventBus.emit('current-scene-ready', this);
+
+        webSocketService
+        .on('propagate-stop')
+        .subscribe({
+            next: (result: any) => {
+
+                console.log("propagate-stop", result);
+
+                this.showMatchResultPopup(this.points, result);
+                
+            },
+            error: error => {
+                alert(error.message)
+            }
+        })
 
     }
 
@@ -372,6 +371,10 @@ export class Game extends Scene {
             this.moveCount++;    
             this.renderPuzzleBoard();
         }
+
+        const success = this.checkSuccess();
+
+        this.checkPuzzleSolution();
     }    
 
     private checkSuccess(): boolean {
@@ -395,6 +398,9 @@ export class Game extends Scene {
     
         // correct = current
         if (success) {
+
+            roomService.getRoom().addPointToUser(1);
+
             // takes possible try again text off the screen
             this.tryAgainText.setVisible(false);
     
@@ -409,7 +415,7 @@ export class Game extends Scene {
             this.renderBrailleTranslation();
     
             // Add the points for solving the char, being the time left/amount of moves made over the minimum amount
-            this.points += this.timeLeft / ((this.moveCount - (this.minMoves[this.currentChar])));
+            this.points += 1;
 
             // loads the next char if there is any
             if (this.currentCharIndex < (this.puzzleSequence.length - 1)) {
@@ -425,6 +431,7 @@ export class Game extends Scene {
                 // PUXAR CODIGO DE FIM DE JOGO
                 this.checkSolutionBtn.setText('Complete!');
                 this.checkSolutionBtn.disableInteractive();
+                this.finishPhase();
             }
         // wrong solution, try again text is displayed
         } else {
@@ -473,35 +480,11 @@ export class Game extends Scene {
         this.timerText.setText(formatted);
     }
 
-    private updateProgressBar(progressBar: Phaser.GameObjects.Graphics, x: number, y: number, progressValue: number) {
-        const width = 250;
-        const progressWidth = (width * progressValue) / 100;
     
-        progressBar.clear();
-        progressBar.fillStyle(0xC2A385, 1);
-        progressBar.fillRect(x - width / 2, y - 10, progressWidth, 20);
-    }
-
-    private updateProgressBarReverse(progressBar: Phaser.GameObjects.Graphics, x: number, y: number, progressValue: number) {
-        const width = 250;
-        const progressWidth = (width * progressValue) / 100;
-    
-        progressBar.clear();
-        progressBar.fillStyle(0xC2A385, 1);
-        progressBar.fillRect(x + width / 2 - progressWidth, y - 10, progressWidth, 20);
-    }
 
     override update () {
         // Simulação de progresso dos jogadores
-        if (this.player1ProgressValue < 100) {
-            this.player1ProgressValue += 0.5;
-        }
-        if (this.player2ProgressValue < 100) {
-            this.player2ProgressValue += 0.3;
-        }
-
-        this.updateProgressBar(this.player1Progress, 120, 60, this.player1ProgressValue);
-        this.updateProgressBarReverse(this.player2Progress, 774, 60, this.player2ProgressValue);
+      
     }
 
     private gameOver(): void
@@ -516,42 +499,81 @@ export class Game extends Scene {
         const success = this.checkSuccess();
         this.timerEvent.remove(false);
         this.bgMusic.stop();
-        this.showRoundResult(success);
 
-
-
+        webSocketService.emit('stop', this.points, () => {})
         
     }
 
-    private showRoundResult(success: boolean): void {
-        // Caixa branca com borda
-        const box = this.add.rectangle(512, 384, 520, 260, 0xffffff, 1)
+    private showMatchResultPopup(userPoints: number, adversaryPoints: number): void {
+
+        // webSocketService
+        // .on("propagate-start")
+        // .subscribe({
+        //     next: result => {
+        //         if(roundsService.isLastRound()) {
+        //             this.scene.start('GameOver');
+        //         } else {
+        //             roundsService.incrementRound();
+
+        //             this.scene.restart();
+
+        //             if(roomService.created) {
+        //                 this.scene.start('WaitingRoom');
+        //             } else {
+        //                 this.scene.start('WaitingEnterRoom');
+        //             }
+        //         }
+        //     },
+        //     error: error => {
+        //         alert(error.message)
+        //     }
+        // })
+   
+        let title = '';
+        let subtitle = '';
+        let color = '';
+    
+        if (userPoints > adversaryPoints) {
+            title = 'Parabéns!';
+            subtitle = `Você ganhou essa partida, você fez ${userPoints} ponto${userPoints === 1 ? '' : 's'} e seu adversário ${adversaryPoints}.`;
+            color = '#006400'; // verde escuro
+
+            roomService.getRoom().addPointToUser(1);
+        } else if (userPoints < adversaryPoints) {
+            title = 'Que pena, você perdeu =(';
+            subtitle = `Você fez ${userPoints} ponto${userPoints === 1 ? '' : 's'} e seu adversário ${adversaryPoints}.`;
+            color = '#8B0000'; // vermelho escuro
+            roomService.getRoom().addPointsToAdversary(1);
+        } else {
+            title = 'Nossa, deu empate!';
+            subtitle = `Você e seu adversário fizeram ${userPoints} ponto${userPoints === 1 ? '' : 's'}!`;
+            color = '#444444'; // cinza
+        }
+    
+        const container = this.add.container(0, 0);
+    
+        const box = this.add.rectangle(512, 384, 580, 280, 0xffffff, 1)
             .setStrokeStyle(4, 0xffffff)
-            .setDepth(101)
+            .setDepth(100)
             .setOrigin(0.5);
     
-        // Título grande (Love Light)
-        const titleText = this.add.text(512, 320, success ? 'Você acertou!' : 'Você errou!', {
-            fontSize: '48px',
+        const titleText = this.add.text(512, 320, title, {
+            fontSize: '46px',
             fontFamily: 'Love Light',
-            color: success ? '#000000' : '#ff0000',
-            align: 'center'
+            color,
+            stroke: '#000000',
+            strokeThickness: 2
         }).setOrigin(0.5).setDepth(101);
     
-        // Subtexto (Jacques Francois)
-        const subText = this.add.text(512, 375,
-            success ? 'Você ganhou um ponto!' : 'O outro jogador ganhou um ponto!',
-            {
-                fontSize: '22px',
-                fontFamily: 'Jacques Francois',
-                color: '#333333',
-                align: 'center',
-                wordWrap: { width: 440 }
-            }
-        ).setOrigin(0.5).setDepth(101);
+        const subText = this.add.text(512, 375, subtitle, {
+            fontSize: '22px',
+            fontFamily: 'Jacques Francois',
+            color: '#333333',
+            align: 'center',
+            wordWrap: { width: 500 }
+        }).setOrigin(0.5).setDepth(101);
     
-        // Botão "Ir para a próxima rodada"
-        const continueBtn = this.add.text(512, 435, 'Ir para a próxima rodada', {
+        const continueBtn = this.add.text(512, 440, roundsService.isLastRound() ? 'Visualizar Resultado' : "Continuar", {
             fontSize: '22px',
             fontFamily: 'Jacques Francois',
             color: '#ffffff',
@@ -564,9 +586,23 @@ export class Game extends Scene {
           .on('pointerout', () => continueBtn.setStyle({ backgroundColor: '#6f4e37' }))
           .on('pointerdown', () => {
               container.destroy();
-              this.scene.start('GameOver'); // ou próxima rodada
+            
+                if(roundsService.isLastRound()) {
+                    this.scene.start('GameOver');
+                } else {
+                    roundsService.incrementRound();
+
+                    this.scene.stop();
+
+                    if(roomService.created) {
+                        this.scene.start('WaitingRoom');
+                    } else {
+                        this.scene.start('WaitingEnterRoom');
+                    }
+                }
+
           });
     
-        const container = this.add.container(0, 0, [box, titleText, subText, continueBtn]);
+        container.add([box, titleText, subText, continueBtn]);
     }
 }

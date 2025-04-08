@@ -7,6 +7,7 @@ import { riddlesService } from './riddles';
 
 export class room {
   private room?: Room;
+  public created: boolean = false;
 
   public getRoom(): Room {
     if (!this.room) {
@@ -16,12 +17,16 @@ export class room {
   }
 
   public createRoom(steps: number, owner: User, name: string): Observable<any> {
+
+
     return new Observable(subscriber => {
       webSocketService.emit('create-room', name, owner.name, steps, (response: any) => {
         if (response === 'room already exists') {
           subscriber.error(new Error('Sala já existe'));
           return;
         }
+
+        this.created = true;
 
         roundsService.rounds = steps;
 
@@ -51,8 +56,11 @@ export class room {
           }
         }  
 
+        console.log('Entrou na sala', response);
+        console.log('Entrou na sala', response.players[0]._name);
+
         this.room = new Room(name);
-        this.room.adversary = response.players[1].name;
+        this.room.adversary = response.players[0]._name;
         roundsService.rounds = response.steps;
         riddlesService.riddles = response.riddles;
 

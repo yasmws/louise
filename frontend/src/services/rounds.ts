@@ -20,6 +20,14 @@ export class RoundsService {
     get currentRound(): number {
         return this._currentRound;
     }
+
+    incrementRound(): void {
+        this._currentRound++;
+    }
+
+    isLastRound(): boolean {
+        return this._currentRound === this._rounds;
+    }
 }
 
 export const roundsService = new RoundsService(0);

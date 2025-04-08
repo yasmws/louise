@@ -82,20 +82,41 @@ export class WaitingRoom extends Scene {
       color: '#ffffff'
     }).setOrigin(0.5);
 
+     // Adiciona o botão "Pronto para iniciar"
+    const readyButton = this.add.text(centerX, centerY + 240, 'Iniciar Partida', {
+      fontFamily: 'serif',
+      fontSize: '28px',
+      color: '#ffffff',
+      backgroundColor: '#28a745',
+      padding: { left: 20, right: 20, top: 10, bottom: 10 },
+      align: 'center'
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setVisible(false);
+
+    const waitingText = this.add.text(centerX, centerY + 240, 'Aguardando o outro jogador...', {
+      fontFamily: 'serif',
+      fontSize: '24px',
+      color: '#ffffff'
+    }).setOrigin(0.5).setVisible(false);
+
+    readyButton.on('pointerdown', () => {
+      readyButton.setVisible(false);
+      waitingText.setVisible(true);
+      this.startGame();
+    });
+
     webSocketService
     .on('player-joined')
     .subscribe({
         next: (result: any) => {
             console.log('result player-joined', result);
-            player2Text.setText(`Jogador 2: ${result[1]}`);
-            roomService.setAdversary(result.players[1].name);
+            player2Text.setText(`Jogador 2: ${result.players[1]._name}`);
+            roomService.setAdversary(result.players[1]._name);
             riddlesService.riddles = result.riddles;
-            
-            this.time.delayedCall(1000, () => {
-              this.startGame();
-            }, [], this);
-            
-            
+
+            setTimeout(() => {
+              readyButton.setVisible(true);
+            }, 1000);
+
         },
         error: error => {
             alert(error.message)
@@ -110,18 +131,6 @@ export class WaitingRoom extends Scene {
       this.startCountdown();
 
     })
-
-    // webSocketService
-    // .on("propagate-start")
-    // .subscribe({
-    //     next: result => {
-    //        this.startCountdown();
-    //     },
-    //     error: error => {
-    //         alert(error.message)
-    //     }
-    // })
-    
   }
 
   private startCountdown() {
@@ -130,6 +139,7 @@ export class WaitingRoom extends Scene {
 
     const next = () => {
       if (index >= countdownNumbers.length) {
+        this.scene.get('Game').scene.restart();
         this.scene.start('Game');
         return;
       }

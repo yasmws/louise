@@ -107,6 +107,7 @@ export class WaitingEnterRoom extends Scene {
 
     const next = () => {
       if (index >= countdownNumbers.length) {
+        this.scene.get('Game').scene.restart();
         this.scene.start('Game');
         return;
       }
