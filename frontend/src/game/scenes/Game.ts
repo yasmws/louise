@@ -220,7 +220,7 @@ export class Game extends Scene {
             .setDisplaySize(150, 40)
             .setOrigin(0.5);
         this.player1Text = this.add
-            .text(124, 30, 'Jogador 1', {
+            .text(124, 30, userService.getUser().name, {
                 fontFamily: 'Jacques Francois',
                 fontSize: '20px',
                 color: '#000000',
@@ -239,14 +239,14 @@ export class Game extends Scene {
             })
             .setOrigin(0.5);
 
-        this.tryAgainText = this.add
-            .text(512, 290, 'Try again!', {
-                fontSize: '24px',
-                color: '#ff0000',
-            })
-            .setOrigin(0.5)
-            .setVisible(false)
-            .setDepth(10); // Make sure it's higher than the image's depth
+        // this.tryAgainText = this.add
+        //     .text(512, 290, 'Try again!', {
+        //         fontSize: '24px',
+        //         color: '#ff0000',
+        //     })
+        //     .setOrigin(0.5)
+        //     .setVisible(false)
+        //     .setDepth(10); // Make sure it's higher than the image's depth
         const riddle = riddlesService.getCurrentRiddle(
             roundsService.currentRound - 1
         );
@@ -353,7 +353,7 @@ export class Game extends Scene {
         // Get the position of the current character we're trying to solve
         const currentCharPosition =
             this.missingBraillePositions[this.currentChar];
-        console.log(currentCharPosition);
+            this.missingBraillePositions[this.currentChar];
 
         // Process each word
         for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
@@ -375,16 +375,13 @@ export class Game extends Scene {
                 letterIndex++
             ) {
                 const letter = word[letterIndex];
-                let isCurrentPuzzleLetter = 0;
+            
 
-                // Check if this letter is the current puzzle character (direct position comparison)
-                if (charIndex === currentCharPosition) {
-                    isCurrentPuzzleLetter = 1;
-                }
+                const isCurrentPuzzleLetter = this.brailleArray[charIndex] === '_' && this.originalBrailleArray[charIndex] === brailleMap[this.currentChar];
 
                 // Create text object for this letter with appropriate color
                 const letterText = this.add.text(x, y, letter, {
-                    color: isCurrentPuzzleLetter == 1 ? '#FFFFF' : '#000000', // Orange highlight or black
+                    color: isCurrentPuzzleLetter ? '#FF0000' : '#000000', // Orange highlight or black
                 });
 
                 // Add to container
@@ -579,6 +576,7 @@ export class Game extends Scene {
                 this.initializePuzzleBoard();
                 this.renderPuzzleBoard();
                 this.renderClueText();
+
 
                 // No next char, end of game
             } else {
