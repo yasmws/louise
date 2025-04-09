@@ -1,3 +1,4 @@
+import { roundsService } from './../../services/rounds';
 import { Scene } from 'phaser';
 import { roomService } from '../../services/room';
 import { webSocketService } from '../../services/websocket';
@@ -26,6 +27,18 @@ export class WaitingEnterRoom extends Scene {
 
     const room = roomService.getRoom();
     const user = userService.getUser();
+
+    const level = roundsService.currentRound;
+
+    const levelTextValue = `Level: ${level}`;
+    this.add.text(centerX, centerY - 120, levelTextValue, {
+      fontFamily: 'serif',
+      fontSize: '24px',
+      color: '#ffffff',
+      stroke: '#000',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+
 
     const roomLabel = this.add.text(centerX, centerY - 180, 'SALA', {
       fontFamily: 'serif',
