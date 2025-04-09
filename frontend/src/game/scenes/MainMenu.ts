@@ -140,11 +140,19 @@ export class MainMenu extends Scene {
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
 
-        const box = this.add.rectangle(centerX, centerY, 500, 250, 0x000000, 0.7)
+        const box = this.add.rectangle(centerX, centerY, 600, 500, 0x000000, 0.7)
             .setStrokeStyle(2, 0xffffff).setOrigin(0.5);
 
-        const text = this.add.text(centerX, centerY - 50,
-            'Resolva os enigmas de braille\ne complete a tradução da frase!',
+        const title = this.add.text(centerX, centerY - 200, 'Objetivo:', {
+            fontFamily: 'serif',
+            fontSize: '24px',
+            color: '#ffffff',
+            align: 'center',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        const objective = this.add.text(centerX, centerY - 150,
+            'Deslize as peças para formar letras em Braille\ne completar o texto à direita.\nAdivinhe todas as letras antes do tempo acabar!',
             {
                 fontFamily: 'serif',
                 fontSize: '18px',
@@ -152,10 +160,44 @@ export class MainMenu extends Scene {
                 align: 'center'
             }).setOrigin(0.5);
 
-        const closeButton = this.add.image(centerX, centerY + 80, 'header-button')
+        const howToPlayTitle = this.add.text(centerX, centerY - 70, 'Como jogar:', {
+            fontFamily: 'serif',
+            fontSize: '24px',
+            color: '#ffffff',
+            align: 'center',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        const instructions = this.add.text(centerX, centerY,
+            'Jogue em dupla.\n\nComplete o texto em até 1 minuto.\n\nQuem terminar primeiro ou acertar mais letras,\nvence a rodada.',
+            {
+                fontFamily: 'serif',
+                fontSize: '18px',
+                color: '#ffffff',
+                align: 'center'
+            }).setOrigin(0.5);
+
+        const beforeStartTitle = this.add.text(centerX, centerY + 80, 'Antes de começar:', {
+            fontFamily: 'serif',
+            fontSize: '24px',
+            color: '#ffffff',
+            align: 'center',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        const beforeStart = this.add.text(centerX, centerY + 130,
+            'Escolha quantas rodadas jogar: 3, 6 ou 9.\nQuem tiver mais vitórias ao final, ganha a partida!',
+            {
+                fontFamily: 'serif',
+                fontSize: '18px',
+                color: '#ffffff',
+                align: 'center'
+            }).setOrigin(0.5);
+
+        const closeButton = this.add.image(centerX, centerY + 200, 'header-button')
             .setScale(2).setInteractive();
 
-        const closeText = this.add.text(centerX, centerY + 80, 'Fechar', {
+        const closeText = this.add.text(centerX, centerY + 200, 'Fechar', {
             fontFamily: 'serif',
             fontSize: '18px',
             color: '#000000'
@@ -163,7 +205,12 @@ export class MainMenu extends Scene {
 
         closeButton.on('pointerup', () => this.instructionsDialog?.destroy());
 
-        this.instructionsDialog = this.add.container(0, 0, [box, text, closeButton, closeText]);
+        this.instructionsDialog = this.add.container(0, 0, [
+            box, title, objective, 
+            howToPlayTitle, instructions, 
+            beforeStartTitle, beforeStart, 
+            closeButton, closeText
+        ]);
     }
 
     enterRoom() {
