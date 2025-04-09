@@ -80,6 +80,7 @@ export class Game extends Scene {
     private clueTextGroup!: Phaser.GameObjects.Container;
     private socket: WebSocketService;
     private propagateStopSub?: Subscription; 
+    endTime: number;
 
 
     constructor() {
@@ -90,6 +91,7 @@ export class Game extends Scene {
     initSocket() {
         this.socket = webSocketService;
         this.socket.connect('ws://localhost:3000');
+
     }
 
     // DESIGN
@@ -119,6 +121,20 @@ export class Game extends Scene {
         this.points = 0;
         this.timeLeft = 60;
 
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height / 2;
+
+        const level = roundsService.currentRound;
+
+        const levelTextValue = `Nível: ${level}`;
+        this.add.text(centerX - 20, centerY - 300, levelTextValue, {
+          fontFamily: 'Love Light',
+          fontSize: '24px',
+          color: '#ffffff',
+          stroke: '#000',
+          strokeThickness: 2
+        }).setOrigin(0.5);
+
 
         if (this.resultPopupContainer) {
             this.resultPopupContainer.destroy(true);
@@ -129,21 +145,21 @@ export class Game extends Scene {
         this.bgMusic = this.sound.add('backgroundMusic', { loop: true, volume: 0.1 });
         this.bgMusic.play();
 
-        this.header = this.add.graphics();
-        const headerWidth = 1080, headerHeight = 100, dotSpacing = 10, dotRadius = 3;
-        const rows = Math.floor(headerHeight / dotSpacing);
-        const startColor = new Phaser.Display.Color(200, 150, 100);
-        const endColor = new Phaser.Display.Color(111, 78, 55);
-        for (let y = dotSpacing / 2, rowIndex = 0; y < headerHeight; y += dotSpacing, rowIndex++) {
-            const interpolated = Phaser.Display.Color.Interpolate.ColorWithColor(startColor, endColor, rows - 1, rowIndex);
-            const colorHex = Phaser.Display.Color.GetColor(interpolated.r, interpolated.g, interpolated.b);
-            const alpha = Phaser.Math.Linear(1, 0, rowIndex / (rows - 1));
-            for (let x = dotSpacing / 2; x < headerWidth; x += dotSpacing) {
-                this.header.fillStyle(colorHex, alpha);
-                this.header.fillCircle(x, y, dotRadius);
-            }
-        }
-        this.header.setPosition(0, 0);
+        //this.header = this.add.graphics();
+        //const headerWidth = 1080, headerHeight = 100, dotSpacing = 10, dotRadius = 3;
+        //const rows = Math.floor(headerHeight / dotSpacing);
+        //const startColor = new Phaser.Display.Color(200, 150, 100);
+        //const endColor = new Phaser.Display.Color(111, 78, 55);
+        //for (let y = dotSpacing / 2, rowIndex = 0; y < headerHeight; y += dotSpacing, rowIndex++) {
+        //    const interpolated = Phaser.Display.Color.Interpolate.ColorWithColor(startColor, endColor, rows - 1, rowIndex);
+        //    const colorHex = Phaser.Display.Color.GetColor(interpolated.r, interpolated.g, interpolated.b);
+        //    const alpha = Phaser.Math.Linear(1, 0, rowIndex / (rows - 1));
+        //    for (let x = dotSpacing / 2; x < headerWidth; x += dotSpacing) {
+        //        this.header.fillStyle(colorHex, alpha);
+        //        this.header.fillCircle(x, y, dotRadius);
+        //    }
+        //}
+        //this.header.setPosition(0, 0);
 
         this.titleLouise = this.add.text(512, 100, 'Louise', {
             fontFamily: 'Love Light', fontSize: '150px', color: '#C2A385', stroke: '#ffffff', strokeThickness: 5,
@@ -156,13 +172,12 @@ export class Game extends Scene {
         this.startTimer();
 
         this.boxPlayer1 = this.add.image(124, 30, 'header2').setDisplaySize(150, 40).setOrigin(0.5);
-        this.player1Text = this.add.text(124, 30, 'Jogador 1', {
+        this.player1Text = this.add.text(124, 30, '', {
             fontFamily: 'Jacques Francois', fontSize: '20px', color: '#000000' }).setOrigin(0.5);
 
         this.boxPlayer2 = this.add.image(924, 30, 'header2').setDisplaySize(150, 40).setOrigin(0.5);
         this.player2Text = this.add.text(924, 30, 'Jogador 2', {
             fontFamily: 'Jacques Francois', fontSize: '20px', color: '#000000' }).setOrigin(0.5);
-
 
  
         this.tryAgainText = this.add.text(512, 290, 'Try again!', {
@@ -212,6 +227,7 @@ export class Game extends Scene {
             console.log('propagate-continue');
             console.log( 'já foi chamado', this.gameOverTriggered)
             
+            this.bgMusic.stop();
             this.gameover()
             this.gameOverTriggered = true;
         });
@@ -285,13 +301,16 @@ export class Game extends Scene {
             // Process each letter in the word
             for (let letterIndex = 0; letterIndex < word.length; letterIndex++) {
                 const letter = word[letterIndex];
+                let isCurrentPuzzleLetter = 0;
                 
                 // Check if this letter is the current puzzle character (direct position comparison)
-                const isCurrentPuzzleLetter = charIndex === currentCharPosition;
-                
+                if (charIndex === currentCharPosition) {
+                    isCurrentPuzzleLetter = 1;
+                }
+               
                 // Create text object for this letter with appropriate color
                 const letterText = this.add.text(x, y, letter, {
-                    color: isCurrentPuzzleLetter ? '#FF0000' : '#000000', // Orange highlight or black
+                    color: isCurrentPuzzleLetter == 1 ? '#FFFFF' : '#000000', // Orange highlight or black
                 });
                 
                 // Add to container
@@ -451,7 +470,7 @@ export class Game extends Scene {
             }
         // wrong solution, try again text is displayed
         } else {
-            this.tryAgainText.setVisible(true);
+            //this.tryAgainText.setVisible(true);
         }
     }
     
@@ -472,16 +491,22 @@ export class Game extends Scene {
 
     private startTimer(): void
     {
-        this.timeLeft = 120;
+        const matchDurationInSeconds = 360;
+        const matchDurationInMs = matchDurationInSeconds * 1000;
+
+        this.endTime = Date.now() + matchDurationInMs;
+
         this.timerEvent = this.time.addEvent({
             delay: 100,
             callback: () => {
-                this.timeLeft--;
-                if (this.timeLeft < 0) {
-                    this.timeLeft = 0;
+                const remainingMs = this.endTime - Date.now();
+                this.timeLeft = Math.max(0, Math.ceil(remainingMs / 1000));
+
+                if (this.timeLeft <= 0) {
                     this.timerEvent.remove(false);
                     this.finishPhase();
                 }
+
                 this.updateTimerText();
             },
             loop: true
@@ -582,6 +607,8 @@ export class Game extends Scene {
     }
 
     private gameover = () => {
+
+        this.bgMusic.stop();
 
         if (this.gameOverTriggered) return;
             

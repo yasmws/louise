@@ -22,6 +22,17 @@ export class WaitingRoom extends Scene {
     const room = roomService.getRoom();
     const user = userService.getUser();
 
+    const level = roundsService.currentRound;
+
+    const levelTextValue = `Level: ${level}`;
+    this.add.text(centerX, centerY - 120, levelTextValue, {
+      fontFamily: 'serif',
+      fontSize: '24px',
+      color: '#ffffff',
+      stroke: '#000',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+
     const roomLabel = this.add.text(centerX, centerY - 180, 'SALA', {
       fontFamily: 'serif',
       fontSize: '22px',
