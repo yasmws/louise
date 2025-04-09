@@ -156,12 +156,12 @@ export class Game extends Scene {
         this.startTimer();
 
         this.boxPlayer1 = this.add.image(124, 30, 'header2').setDisplaySize(150, 40).setOrigin(0.5);
-        this.player1Text = this.add.text(124, 30, 'Jogador 1', {
-            fontFamily: 'Jacques Francois', fontSize: '20px', color: '#000000' }).setOrigin(0.5);
+        this.player1Text = this.add.text(124, 30, userService.getUser()?.name ?? 'Jogador 1', {
+            fontFamily: 'Jacques Francois', fontSize: '24px', color: '#000000' }).setOrigin(0.5);
 
         this.boxPlayer2 = this.add.image(924, 30, 'header2').setDisplaySize(150, 40).setOrigin(0.5);
-        this.player2Text = this.add.text(924, 30, 'Jogador 2', {
-            fontFamily: 'Jacques Francois', fontSize: '20px', color: '#000000' }).setOrigin(0.5);
+        this.player2Text = this.add.text(924, 30, roomService.getRoom().adversary ?? 'Jogador 2', {
+            fontFamily: 'Jacques Francois', fontSize: '24px', color: '#000000' }).setOrigin(0.5);
 
 
  

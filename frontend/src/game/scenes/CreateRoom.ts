@@ -48,6 +48,36 @@ export class CreateRoom extends Scene {
             strokeThickness: 1,
         }).setOrigin(0.5);
 
+        // Botão de voltar
+        const backButton = this.add.image(100, 80, 'header-button')
+            .setScale(2)
+            .setInteractive();
+
+        this.add.text(100, 80, 'Voltar', {
+            fontFamily: 'serif',
+            fontSize: '18px',
+            color: '#000000'
+        }).setOrigin(0.5);
+
+        backButton.on('pointerover', () => {
+            backButton.setScale(2.2);
+            this.input.setDefaultCursor('pointer');
+        });
+
+        backButton.on('pointerout', () => {
+            backButton.setScale(2);
+            this.input.setDefaultCursor('default');
+        });
+
+        backButton.on('pointerdown', () => {
+            backButton.setScale(1.9);
+        });
+
+        backButton.on('pointerup', () => {
+            backButton.setScale(2);
+            this.scene.start('MainMenu');
+        });
+
         // Botões de rodada
         const options = [3, 6, 9];
         options.forEach((num, index) => {
@@ -137,11 +167,21 @@ export class CreateRoom extends Scene {
             color: '#ffffff'
         }).setOrigin(0.5);
     
-        const confirmBtn = this.add.image(centerX, centerY + 90, 'header-button')
+        const confirmBtn = this.add.image(centerX, centerY + 70, 'header-button')
             .setScale(2)
             .setInteractive();
     
-        const confirmText = this.add.text(centerX, centerY + 90, 'Confirmar', {
+        const confirmText = this.add.text(centerX, centerY + 70, 'Confirmar', {
+            fontFamily: 'serif',
+            fontSize: '18px',
+            color: '#000000'
+        }).setOrigin(0.5);
+
+        const cancelBtn = this.add.image(centerX, centerY + 120, 'header-button')
+            .setScale(2)
+            .setInteractive();
+    
+        const cancelText = this.add.text(centerX, centerY + 120, 'Cancelar', {
             fontFamily: 'serif',
             fontSize: '18px',
             color: '#000000'
@@ -154,9 +194,16 @@ export class CreateRoom extends Scene {
             blocker.destroy();
             this.confirmRoomName();
         });
+
+        cancelBtn.on('pointerup', () => {
+            this.roomInput?.remove();
+            this.nameInput?.remove();
+            this.nameDialog?.destroy();
+            blocker.destroy();
+        });
     
         this.nameDialog = this.add.container(0, 0, [
-            box, title, confirmBtn, confirmText
+            box, title, confirmBtn, confirmText, cancelBtn, cancelText
         ]);
     
         const canvasRect = this.game.canvas.getBoundingClientRect();
